@@ -15,6 +15,6 @@ defineProps<Props>();
 </script>
 
 <template>
-    <img :src="darkIconUrl" :class="className" v-bind="$attrs" alt="StackRats Icon" class="hidden dark:flex" />
-    <img :src="lightIconUrl" :class="className" v-bind="$attrs" alt="StackRats Icon" class="flex dark:hidden" />
+    <img :src="darkIconUrl" :class="className" v-bind="$attrs" alt="Stackrats Icon" class="hidden dark:flex" />
+    <img :src="lightIconUrl" :class="className" v-bind="$attrs" alt="Stackrats Icon" class="flex dark:hidden" />
 </template>

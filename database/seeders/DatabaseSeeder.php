@@ -13,6 +13,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed lookup tables first
+        $this->call([
+            InvoiceStatusSeeder::class,
+            RecurringFrequencySeeder::class,
+        ]);
+
         // User::factory(10)->create();
 
         User::factory()->create([
