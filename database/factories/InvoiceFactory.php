@@ -26,6 +26,7 @@ class InvoiceFactory extends Factory
             'recipient_email' => fake()->companyEmail(),
             'recipient_address' => fake()->address(),
             'amount' => fake()->randomFloat(2, 100, 10000),
+            'gst' => 0,
             'currency' => fake()->randomElement(['USD', 'NZD', 'AUD', 'GBP', 'EUR']),
             'description' => fake()->sentence(),
             'line_items' => [

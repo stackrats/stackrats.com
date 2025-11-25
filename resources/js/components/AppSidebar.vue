@@ -14,7 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid, FileText } from 'lucide-vue-next';
+import { LayoutGrid, FileText, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         title: 'Invoices',
         href: '/invoices',
         icon: FileText,
+    },
+    {
+        title: 'Contacts',
+        href: '/contacts',
+        icon: Users,
     },
 ];
 

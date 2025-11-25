@@ -19,9 +19,7 @@ Route::get('register', function () {
     ]);
 })->name('register');
 Route::post('register', function () {
-    return Inertia::render('Welcome', [
-        'canRegister' => false,
-    ]);
+    return redirect()->route('home');
 })->name('register.store');
 
 Route::get('dashboard', function () {
@@ -97,6 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('invoices/{invoice}/send', [\App\Http\Controllers\InvoiceController::class, 'send'])->name('invoices.send');
     Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
     Route::get('invoices/{invoice}/preview', [\App\Http\Controllers\InvoiceController::class, 'previewPdf'])->name('invoices.preview');
+    Route::resource('contacts', \App\Http\Controllers\ContactController::class);
 });
 
 require __DIR__.'/settings.php';

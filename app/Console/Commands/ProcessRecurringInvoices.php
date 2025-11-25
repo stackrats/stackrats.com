@@ -2,9 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Invoice\CreateRecurringInvoiceAction;
+use App\Enums\InvoiceStatuses;
 use App\Jobs\SendInvoiceEmail;
 use App\Models\Invoice;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 
 class ProcessRecurringInvoices extends Command
 {
@@ -13,7 +16,7 @@ class ProcessRecurringInvoices extends Command
      *
      * @var string
      */
-    protected $signature = 'invoices:process-recurring';
+    protected $signature = 'invoices:process-recurring {--date= : The date to simulate processing for (YYYY-MM-DD)}';
 
     /**
      * The console command description.
@@ -25,13 +28,18 @@ class ProcessRecurringInvoices extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(CreateRecurringInvoiceAction $createRecurringInvoice)
     {
-        $this->info('Processing recurring invoices...');
+        $date = $this->option('date') ? Carbon::parse($this->option('date')) : now();
+
+        $this->info("Processing recurring invoices for {$date->toDateString()}...");
 
         $invoices = Invoice::where('is_recurring', true)
-            ->where('next_recurring_date', '<=', now())
+            ->where('next_recurring_date', '<=', $date)
             ->whereNotNull('next_recurring_date')
+            ->whereHas('invoiceStatus', function ($query) {
+                $query->where('name', '!=', InvoiceStatuses::DRAFT->value);
+            })
             ->get();
 
         if ($invoices->isEmpty()) {
@@ -42,10 +50,20 @@ class ProcessRecurringInvoices extends Command
 
         $count = 0;
         foreach ($invoices as $invoice) {
-            $this->line("Processing invoice {$invoice->invoice_number}...");
+            $this->line("Processing recurring invoice for {$invoice->invoice_number}...");
 
-            SendInvoiceEmail::dispatch($invoice);
-            $count++;
+            try {
+                $newInvoice = $createRecurringInvoice->execute($invoice);
+
+                $this->info("Created new invoice {$newInvoice->invoice_number}.");
+
+                SendInvoiceEmail::dispatch($newInvoice);
+                $this->info("Dispatched email for {$newInvoice->invoice_number}.");
+
+                $count++;
+            } catch (\Exception $e) {
+                $this->error("Failed to process invoice {$invoice->invoice_number}: ".$e->getMessage());
+            }
         }
 
         $this->info("Processed {$count} recurring invoice(s).");

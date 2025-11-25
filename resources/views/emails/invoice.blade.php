@@ -151,14 +151,7 @@
                 {{ $invoice->currency }} ${{ number_format($invoice->amount, 2) }}
             </div>
 
-            @if($invoice->is_recurring)
-            <div class="recurring-notice">
-                <strong>Recurring Invoice</strong>
-                <p>This invoice will automatically be generated and sent {{ strtolower($invoice->recurring_frequency) }}. Next invoice date: {{ \Carbon\Carbon::parse($invoice->next_recurring_date)->format('F j, Y') }}.</p>
-            </div>
-            @endif
-
-            <p class="message">If you have any questions about this invoice, please contact us at {{ config('mail.from.address') }}.</p>
+            <p class="message">If you have any questions about this invoice, please contact {{ config('mail.from.address') }}.</p>
             
             <p class="message">Thank you!</p>
         </div>

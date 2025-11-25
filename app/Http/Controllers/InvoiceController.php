@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\InvoiceStatuses;
+use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\InvoiceStatus;
 use App\Models\RecurringFrequency;
@@ -42,6 +43,7 @@ class InvoiceController extends Controller
         return Inertia::render('invoices/Create', [
             'statuses' => InvoiceStatus::orderBy('sort_order')->get(),
             'frequencies' => RecurringFrequency::orderBy('sort_order')->get(),
+            'contacts' => Contact::where('user_id', Auth::id())->orderBy('name')->get(),
         ]);
     }
 
@@ -51,10 +53,12 @@ class InvoiceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'contact_id' => 'nullable|exists:contacts,id',
             'recipient_name' => 'required|string|max:255',
             'recipient_email' => 'required|email|max:255',
             'recipient_address' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
+            'gst' => 'numeric|min:0',
             'currency' => 'required|string|size:3',
             'description' => 'nullable|string',
             'line_items' => 'nullable|array',
@@ -62,6 +66,7 @@ class InvoiceController extends Controller
             'due_date' => 'required|date|after_or_equal:issue_date',
             'is_recurring' => 'boolean',
             'recurring_frequency_id' => 'nullable|exists:recurring_frequencies,id',
+            'next_recurring_date' => 'nullable|date|after:issue_date',
         ]);
 
         $draftStatus = InvoiceStatus::where('name', InvoiceStatuses::DRAFT->value)->first();
@@ -73,7 +78,7 @@ class InvoiceController extends Controller
         $invoice->invoice_number = $invoice->generateInvoiceNumber();
         $invoice->invoice_status_id = $draftStatus->id;
 
-        if ($invoice->is_recurring && $invoice->recurring_frequency_id) {
+        if ($invoice->is_recurring && $invoice->recurring_frequency_id && empty($invoice->next_recurring_date)) {
             $frequency = RecurringFrequency::find($invoice->recurring_frequency_id);
             $invoice->next_recurring_date = $this->calculateNextRecurringDate(
                 $invoice->issue_date,
@@ -115,6 +120,7 @@ class InvoiceController extends Controller
             'invoice' => $invoice,
             'statuses' => InvoiceStatus::orderBy('sort_order')->get(),
             'frequencies' => RecurringFrequency::orderBy('sort_order')->get(),
+            'contacts' => Contact::where('user_id', Auth::id())->orderBy('name')->get(),
         ]);
     }
 
@@ -126,10 +132,12 @@ class InvoiceController extends Controller
         $this->authorize('update', $invoice);
 
         $validated = $request->validate([
+            'contact_id' => 'nullable|exists:contacts,id',
             'recipient_name' => 'required|string|max:255',
             'recipient_email' => 'required|email|max:255',
             'recipient_address' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
+            'gst' => 'nullable|numeric|min:0',
             'currency' => 'required|string|size:3',
             'description' => 'nullable|string',
             'line_items' => 'nullable|array',
@@ -138,11 +146,12 @@ class InvoiceController extends Controller
             'due_date' => 'required|date|after_or_equal:issue_date',
             'is_recurring' => 'boolean',
             'recurring_frequency_id' => 'nullable|exists:recurring_frequencies,id',
+            'next_recurring_date' => 'nullable|date|after:issue_date',
         ]);
 
         $invoice->update($validated);
 
-        if ($invoice->is_recurring && $invoice->recurring_frequency_id) {
+        if ($invoice->is_recurring && $invoice->recurring_frequency_id && empty($invoice->next_recurring_date)) {
             $frequency = RecurringFrequency::find($invoice->recurring_frequency_id);
             $invoice->next_recurring_date = $this->calculateNextRecurringDate(
                 $invoice->issue_date,

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalToIntCast;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +14,13 @@ class Invoice extends Model
 
     protected $fillable = [
         'user_id',
+        'contact_id',
         'invoice_number',
         'recipient_name',
         'recipient_email',
         'recipient_address',
         'amount',
+        'gst',
         'currency',
         'description',
         'line_items',
@@ -32,7 +35,8 @@ class Invoice extends Model
 
     protected $casts = [
         'line_items' => 'array',
-        'amount' => 'decimal:2',
+        'amount' => DecimalToIntCast::class,
+        'gst' => DecimalToIntCast::class,
         'issue_date' => 'date',
         'due_date' => 'date',
         'next_recurring_date' => 'date',
@@ -43,6 +47,11 @@ class Invoice extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
     }
 
     public function invoiceStatus(): BelongsTo

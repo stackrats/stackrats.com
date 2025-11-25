@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->daily();
 
         $schedule->command(ProcessRecurringInvoices::class)
-            ->daily()
+            ->everyMinute()
             ->withoutOverlapping()
             ->onOneServer()
             ->runInBackground();

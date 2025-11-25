@@ -31,12 +31,21 @@ interface RecurringFrequencyModel {
     label: string;
 }
 
+interface Contact {
+    id: string;
+    name: string;
+    email: string;
+    address?: string;
+    phone?: string;
+}
+
 interface Props {
     statuses: InvoiceStatusModel[];
     frequencies: RecurringFrequencyModel[];
+    contacts: Contact[];
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -53,7 +62,9 @@ const form = useForm({
     recipient_name: '',
     recipient_email: '',
     recipient_address: '',
+    contact_id: '',
     amount: '',
+    gst: 0,
     currency: 'NZD',
     description: '',
     line_items: [] as LineItem[],
@@ -61,6 +72,7 @@ const form = useForm({
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     is_recurring: false,
     recurring_frequency_id: '',
+    next_recurring_date: '',
 });
 
 const lineItems = ref<LineItem[]>([
@@ -80,11 +92,38 @@ const calculateLineTotal = (item: LineItem) => {
 };
 
 const calculateTotal = () => {
-    const total = lineItems.value.reduce((sum, item) => {
-        return sum + (item.quantity * item.unit_price);
+    const subtotal = lineItems.value.reduce((acc, item) => {
+        return acc + (item.quantity * item.unit_price);
     }, 0);
+    
+    const gstAmount = subtotal * (form.gst / 100);
+    const total = subtotal + gstAmount;
+    
     form.amount = total.toFixed(2);
     return total.toFixed(2);
+};
+
+const calculateSubtotal = () => {
+    return lineItems.value.reduce((acc, item) => {
+        return acc + (item.quantity * item.unit_price);
+    }, 0).toFixed(2);
+};
+
+const calculateGst = () => {
+    const subtotal = parseFloat(calculateSubtotal());
+    return (subtotal * (form.gst / 100)).toFixed(2);
+};
+
+const onContactSelect = (event: Event) => {
+    const select = event.target as HTMLSelectElement;
+    const contactId = select.value;
+    const contact = props.contacts.find(c => c.id === contactId);
+    
+    if (contact) {
+        form.recipient_name = contact.name;
+        form.recipient_email = contact.email;
+        form.recipient_address = contact.address || '';
+    }
 };
 
 const submit = () => {
@@ -110,7 +149,21 @@ const submit = () => {
                 <!-- Recipient Information -->
                 <Card>
                     <div class="p-6 space-y-4">
-                        <h3 class="text-lg font-semibold">Recipient Information</h3>
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Recipient Information</h3>
+                            <div class="w-64">
+                                <select
+                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
+                                    v-model="form.contact_id"
+                                    @change="onContactSelect"
+                                >
+                                    <option value="">Select a contact...</option>
+                                    <option v-for="contact in contacts" :key="contact.id" :value="contact.id">
+                                        {{ contact.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
                         
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-2">
@@ -192,7 +245,7 @@ const submit = () => {
                                 <select
                                     id="currency"
                                     v-model="form.currency"
-                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
                                     required
                                 >
                                     <option value="NZD">NZD</option>
@@ -203,6 +256,19 @@ const submit = () => {
                                     <option value="CAD">CAD</option>
                                 </select>
                                 <InputError :message="form.errors.currency" />
+                            </div>
+
+                            <div class="space-y-2">
+                                <Label for="gst">GST (%)</Label>
+                                <Input
+                                    id="gst"
+                                    v-model.number="form.gst"
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    @input="calculateTotal"
+                                />
+                                <InputError :message="form.errors.gst" />
                             </div>
                         </div>
                     </div>
@@ -280,9 +346,19 @@ const submit = () => {
                         </div>
 
                         <div class="flex justify-end pt-4 border-t">
-                            <div class="text-right">
-                                <p class="text-sm text-muted-foreground mb-1">Total Amount</p>
-                                <p class="text-2xl font-bold">{{ form.currency }} ${{ calculateTotal() }}</p>
+                            <div class="text-right space-y-1">
+                                <div class="flex justify-between gap-8 text-sm text-muted-foreground">
+                                    <span>Subtotal</span>
+                                    <span>{{ form.currency }} ${{ calculateSubtotal() }}</span>
+                                </div>
+                                <div class="flex justify-between gap-8 text-sm text-muted-foreground">
+                                    <span>GST ({{ form.gst }}%)</span>
+                                    <span>{{ form.currency }} ${{ calculateGst() }}</span>
+                                </div>
+                                <div class="flex justify-between gap-8 font-bold text-lg pt-2 border-t">
+                                    <span>Total</span>
+                                    <span>{{ form.currency }} ${{ calculateTotal() }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -296,8 +372,7 @@ const submit = () => {
                         <div class="flex items-center space-x-2">
                             <Checkbox
                                 id="is_recurring"
-                                :checked="form.is_recurring"
-                                @update:checked="(checked: boolean) => form.is_recurring = !!checked"
+                                v-model="form.is_recurring"
                             />
                             <Label
                                 for="is_recurring"
@@ -312,7 +387,7 @@ const submit = () => {
                             <select
                                 id="recurring_frequency_id"
                                 v-model="form.recurring_frequency_id"
-                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
                                 required
                             >
                                 <option value="">Select frequency</option>
@@ -321,6 +396,20 @@ const submit = () => {
                                 </option>
                             </select>
                             <InputError :message="form.errors.recurring_frequency_id" />
+                        </div>
+
+                        <div v-if="form.is_recurring" class="space-y-2">
+                            <Label for="next_recurring_date">Next Recurring Date</Label>
+                            <Input
+                                id="next_recurring_date"
+                                v-model="form.next_recurring_date"
+                                type="date"
+                                :min="form.issue_date"
+                            />
+                            <p class="text-sm text-muted-foreground">
+                                Leave blank to automatically calculate based on frequency.
+                            </p>
+                            <InputError :message="form.errors.next_recurring_date" />
                         </div>
                     </div>
                 </Card>

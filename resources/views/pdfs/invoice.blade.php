@@ -30,7 +30,7 @@
             align-items: flex-start;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .logo-section {
@@ -125,7 +125,7 @@
             color: #6b7280;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         thead th:last-child,
@@ -177,7 +177,7 @@
         .total-row.gst {
             color: #6b7280;
             padding-bottom: 10px;
-            border-bottom: 2px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .total-row.final-total {
@@ -377,8 +377,27 @@
         <div class="totals-section">
             <div class="totals">
                 @php
-                    $subtotal = floatval($invoice->amount);
-                    $gstRate = $taxRate ?? 0;
+                    $subtotal = 0;
+                    if($invoice->line_items && count($invoice->line_items) > 0) {
+                        foreach($invoice->line_items as $item) {
+                            $subtotal += $item['quantity'] * $item['unit_price'];
+                        }
+                    } else {
+                        // Fallback if no line items, though amount includes GST now, so this is tricky.
+                        // Assuming if no line items, amount is subtotal + gst.
+                        // But we should rely on line items.
+                        // If no line items, let's assume amount is total and reverse calc?
+                        // Or just use amount as subtotal if gst is 0.
+                        // For now, let's assume line items exist or amount is subtotal.
+                        // Actually, if line items are empty, we might have a problem.
+                        // But let's stick to the logic:
+                        $subtotal = floatval($invoice->amount);
+                        if ($invoice->gst > 0) {
+                             $subtotal = $subtotal / (1 + ($invoice->gst / 100));
+                        }
+                    }
+                    
+                    $gstRate = $invoice->gst ?? 0;
                     $gstAmount = $subtotal * ($gstRate / 100);
                     $total = $subtotal + $gstAmount;
                 @endphp
@@ -403,7 +422,7 @@
                 </div>
                 <div class="total-row final-total">
                     <span class="label">Total</span>
-                    <span class="value">{{ number_format($subtotal, 2) }} {{ $invoice->currency }}</span>
+                    <span class="value">{{ number_format($total, 2) }} {{ $invoice->currency }}</span>
                 </div>
                 @endif
             </div>
@@ -425,15 +444,8 @@
             <h4>Notes</h4>
             <p>
                 Thank you! If you have any questions about this invoice, 
-                please contact us at {{ config('mail.from.address') }}.
+                please contact {{ config('mail.from.address') }}.
             </p>
-            @if($invoice->is_recurring)
-            <p style="margin-top: 8px;">
-                <strong>Recurring Invoice:</strong> This invoice will automatically be generated and sent 
-                {{ strtolower($invoice->recurring_frequency) }}. Next invoice date: 
-                {{ \Carbon\Carbon::parse($invoice->next_recurring_date)->format('F j, Y') }}.
-            </p>
-            @endif
         </div>
     </div>
 </body>
