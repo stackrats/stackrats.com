@@ -236,38 +236,6 @@
             color: #78350f;
             line-height: 1.4;
         }
-
-        /* Status Badge */
-        .status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 8px;
-        }
-
-        .status-badge.draft {
-            background: #f3f4f6;
-            color: #6b7280;
-        }
-
-        .status-badge.sent {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .status-badge.paid {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-badge.overdue {
-            background: #fee2e2;
-            color: #991b1b;
-        }
     </style>
 </head>
 <body>
@@ -281,11 +249,8 @@
                 <div class="invoice-type">TAX INVOICE</div>
                 <div class="invoice-number">#{{ $invoice->invoice_number }}</div>
                 <div class="invoice-date">
-                    Date issued: {{ \Carbon\Carbon::parse($invoice->issue_date)->format('d/m/y') }}
+                    Date issued: {{ \Carbon\Carbon::parse($invoice->issue_date)->format('d-m-Y') }}
                 </div>
-                @if($invoice->invoiceStatus->name !== \App\Enums\InvoiceStatuses::DRAFT->value)
-                <div class="status-badge {{ $invoice->invoiceStatus->name }}">{{ $invoice->invoiceStatus->name }}</div>
-                @endif
             </div>
         </div>
 
@@ -315,7 +280,7 @@
 
             <div class="info-section">
                 <h3>Payment terms</h3>
-                <p>Payment due: {{ \Carbon\Carbon::parse($invoice->due_date)->format('d/m/Y') }}</p>
+                <p>Payment due: {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}</p>
                 @if(isset($paymentDetails['surcharge']))
                 <p>{{ $paymentDetails['surcharge'] }}</p>
                 @endif
@@ -382,21 +347,7 @@
                         foreach($invoice->line_items as $item) {
                             $subtotal += $item['quantity'] * $item['unit_price'];
                         }
-                    } else {
-                        // Fallback if no line items, though amount includes GST now, so this is tricky.
-                        // Assuming if no line items, amount is subtotal + gst.
-                        // But we should rely on line items.
-                        // If no line items, let's assume amount is total and reverse calc?
-                        // Or just use amount as subtotal if gst is 0.
-                        // For now, let's assume line items exist or amount is subtotal.
-                        // Actually, if line items are empty, we might have a problem.
-                        // But let's stick to the logic:
-                        $subtotal = floatval($invoice->amount);
-                        if ($invoice->gst > 0) {
-                             $subtotal = $subtotal / (1 + ($invoice->gst / 100));
-                        }
                     }
-                    
                     $gstRate = $invoice->gst ?? 0;
                     $gstAmount = $subtotal * ($gstRate / 100);
                     $total = $subtotal + $gstAmount;
@@ -433,7 +384,7 @@
         <div class="payment-terms">
             <h4>Payment instructions</h4>
             <p>
-                Payment is due by {{ \Carbon\Carbon::parse($invoice->due_date)->format('F j, Y') }}. 
+                Payment is due by {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}. 
                 Please reference invoice number {{ $invoice->invoice_number }} in your payment.
             </p>
         </div>

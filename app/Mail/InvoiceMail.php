@@ -46,6 +46,8 @@ class InvoiceMail extends Mailable
             html: 'emails.invoice',
             with: [
                 'logoUrl' => $storage->url('images/logos/stackrats-logo-light-600.png'),
+                'invoice' => $this->invoice,
+                'emailBody' => $this->emailBody,
             ],
         );
     }

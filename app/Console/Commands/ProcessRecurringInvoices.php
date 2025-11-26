@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Invoice\CreateRecurringInvoiceAction;
 use App\Enums\InvoiceStatuses;
+use App\Events\InvoiceCreated;
 use App\Jobs\SendInvoiceEmail;
 use App\Models\Invoice;
 use Illuminate\Console\Command;
@@ -59,6 +60,9 @@ class ProcessRecurringInvoices extends Command
 
                 SendInvoiceEmail::dispatch($newInvoice);
                 $this->info("Dispatched email for {$newInvoice->invoice_number}.");
+
+                InvoiceCreated::dispatch($newInvoice);
+                $this->info("Dispatched InvoiceCreated event for {$newInvoice->invoice_number}.");
 
                 $count++;
             } catch (\Exception $e) {

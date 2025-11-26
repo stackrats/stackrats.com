@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('currency', 3)->default('USD');
             $table->text('description')->nullable();
             $table->text('line_items')->nullable(); // JSON
-            $table->foreignUuid('invoice_status_id')->nullable()->constrained('invoice_statuses')->onDelete('restrict');
+            $table->foreignUuid('invoice_status_id')->constrained('invoice_statuses')->onDelete('restrict');
             $table->date('issue_date');
             $table->date('due_date');
             $table->boolean('is_recurring')->default(false);

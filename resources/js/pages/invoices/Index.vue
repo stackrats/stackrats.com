@@ -18,6 +18,7 @@ import {
     CheckCircle2
 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import { useEcho } from '@laravel/echo-vue';
 
 interface LineItem {
     description: string;
@@ -67,6 +68,12 @@ interface Props {
 defineProps<Props>();
 
 const page = usePage();
+const user = page.props.auth.user;
+
+useEcho(`App.Models.User.${user.id}`, 'InvoiceCreated', () => {
+    router.reload();
+});
+
 const showSuccess = ref(false);
 const successMessage = ref('');
 
@@ -99,11 +106,11 @@ const getStatusColor = (status: InvoiceStatusType) => {
 };
 
 const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
 };
 
 const formatCurrency = (amount: string, currency: string) => {

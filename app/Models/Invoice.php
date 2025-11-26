@@ -66,20 +66,24 @@ class Invoice extends Model
 
     public function generateInvoiceNumber(): string
     {
-        // Format: 381251111
-        // 3 random digits + 2 year + 2 month + 2 count
-        $randomPrefix = str_pad(random_int(100, 999), 3, '0', STR_PAD_LEFT);
-        $year = now()->format('y');
-        $month = now()->format('m');
+        do {
+            // Format: 381251111
+            // 3 random digits + 2 year + 2 month + 2 count
+            $randomPrefix = str_pad(random_int(100, 999), 3, '0', STR_PAD_LEFT);
+            $year = now()->format('y');
+            $month = now()->format('m');
 
-        // Count invoices for this recipient in the current year
-        $yearStart = now()->startOfYear();
-        $count = static::where('recipient_email', $this->recipient_email)
-            ->where('issue_date', '>=', $yearStart)
-            ->count() + 1;
+            // Count invoices for this recipient in the current year
+            $yearStart = now()->startOfYear();
+            $count = static::where('recipient_email', $this->recipient_email)
+                ->where('issue_date', '>=', $yearStart)
+                ->count() + 1;
 
-        $countPadded = str_pad($count, 2, '0', STR_PAD_LEFT);
+            $countPadded = str_pad($count, 2, '0', STR_PAD_LEFT);
 
-        return $randomPrefix.$year.$month.$countPadded;
+            $number = $randomPrefix.$year.$month.$countPadded;
+        } while (static::where('invoice_number', $number)->exists());
+
+        return $number;
     }
 }

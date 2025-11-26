@@ -132,11 +132,11 @@
                     </tr>
                     <tr>
                         <td>Issue date:</td>
-                        <td>{{ \Carbon\Carbon::parse($invoice->issue_date)->format('F j, Y') }}</td>
+                        <td>{{ \Carbon\Carbon::parse($invoice->issue_date)->format('d-m-Y') }}</td>
                     </tr>
                     <tr>
                         <td>Due date:</td>
-                        <td>{{ \Carbon\Carbon::parse($invoice->due_date)->format('F j, Y') }}</td>
+                        <td>{{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}</td>
                     </tr>
                     @if($invoice->description)
                     <tr>
@@ -148,7 +148,7 @@
             </div>
 
             <div class="amount">
-                {{ $invoice->currency }} ${{ number_format($invoice->amount, 2) }}
+                {{ $invoice->currency }} {{ number_format($invoice->amount, 2) }}
             </div>
 
             <p class="message">If you have any questions about this invoice, please contact {{ config('mail.from.address') }}.</p>

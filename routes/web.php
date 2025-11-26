@@ -22,9 +22,11 @@ Route::post('register', function () {
     return redirect()->route('home');
 })->name('register.store');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+use App\Http\Controllers\DashboardController;
+
+Route::get('dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Test route to preview invoice PDF template
 Route::get('test-invoice-pdf', function () {
