@@ -17,12 +17,26 @@ interface LineItem {
     description: string;
     quantity: number;
     unit_price: number;
+    unit_type: string;
 }
 
 interface InvoiceStatusModel {
     id: string;
     name: InvoiceStatusType;
     sort_order: number;
+}
+
+interface InvoiceUnitTypeModel {
+    id: string;
+    name: string;
+    sort_order: number;
+    label: string;
+}
+
+interface CurrencyModel {
+    value: string;
+    label: string;
+    symbol: string;
 }
 
 interface RecurringFrequencyModel {
@@ -43,6 +57,8 @@ interface Contact {
 interface Props {
     statuses: InvoiceStatusModel[];
     frequencies: RecurringFrequencyModel[];
+    unitTypes: InvoiceUnitTypeModel[];
+    currencies: CurrencyModel[];
     contacts: Contact[];
 }
 
@@ -76,12 +92,14 @@ const form = useForm({
     next_recurring_date: '',
 });
 
+const defaultUnitType = props.unitTypes.find(t => t.name === 'quantity')?.name || props.unitTypes[0]?.name || 'quantity';
+
 const lineItems = ref<LineItem[]>([
-    { description: '', quantity: 1, unit_price: 0 },
+    { description: '', quantity: 1, unit_price: 0, unit_type: defaultUnitType },
 ]);
 
 const addLineItem = () => {
-    lineItems.value.push({ description: '', quantity: 1, unit_price: 0 });
+    lineItems.value.push({ description: '', quantity: 1, unit_price: 0, unit_type: defaultUnitType });
 };
 
 const removeLineItem = (index: number) => {
@@ -237,7 +255,7 @@ const submit = () => {
                                 <Input
                                     id="recipient_address"
                                     v-model="form.recipient_address"
-                                    placeholder="123 Main St, City, State, ZIP"
+                                    placeholder="123 Main St, City, State, Postal code"
                                 />
                                 <InputError :message="form.errors.recipient_address" />
                             </div>
@@ -286,21 +304,18 @@ const submit = () => {
                                 </div>
                             </div>
 
-                            <div class="grid gap-4 sm:grid-cols-[1.5fr_1fr]">
+                            <div class="grid gap-4 md:grid-cols-2">
                                 <div class="space-y-2">
-                                    <Label for="currency">Currency *</Label>
+                                                                        <Label for="currency">Currency *</Label>
                                     <select
                                         id="currency"
                                         v-model="form.currency"
                                         class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
                                         required
                                     >
-                                        <option value="NZD">NZD</option>
-                                        <option value="AUD">AUD</option>
-                                        <option value="USD">USD</option>
-                                        <option value="EUR">EUR</option>
-                                        <option value="GBP">GBP</option>
-                                        <option value="CAD">CAD</option>
+                                        <option v-for="currency in currencies" :key="currency.value" :value="currency.value">
+                                            {{ currency.value }} - {{ currency.label }}
+                                        </option>
                                     </select>
                                     <InputError :message="form.errors.currency" />
                                 </div>
@@ -343,9 +358,10 @@ const submit = () => {
                                 </Button>
                             </div>
 
-                            <div class="hidden rounded-md bg-muted/40 px-4 py-2 text-xs text-muted-foreground md:grid md:grid-cols-[2fr_1fr_1fr_1fr] md:gap-4">
+                            <div class="hidden rounded-md bg-muted/40 px-4 py-2 text-xs text-muted-foreground md:grid md:grid-cols-[2fr_0.5fr_0.8fr_1fr_1fr_auto] md:gap-4">
                                 <span>Description</span>
                                 <span>Qty</span>
+                                <span>Unit</span>
                                 <span>Unit price</span>
                                 <span class="text-right">Line total</span>
                             </div>
@@ -354,7 +370,7 @@ const submit = () => {
                                 <div
                                     v-for="(item, index) in lineItems"
                                     :key="index"
-                                    class="rounded-md border bg-background/40 p-3 md:grid md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:items-start md:gap-4"
+                                    class="rounded-md border bg-background/40 p-3 md:grid md:grid-cols-[2fr_0.5fr_0.8fr_1fr_1fr_auto] md:items-start md:gap-4"
                                 >
                                     <div class="space-y-1 md:space-y-2">
                                         <Label :for="`item_desc_${index}`" class="md:sr-only">Description</Label>
@@ -375,6 +391,19 @@ const submit = () => {
                                             min="1"
                                             @input="calculateTotal"
                                         />
+                                    </div>
+
+                                    <div class="mt-3 space-y-1 md:mt-0 md:space-y-2">
+                                        <Label :for="`item_unit_${index}`" class="text-xs text-muted-foreground md:sr-only">Unit</Label>
+                                        <select
+                                            :id="`item_unit_${index}`"
+                                            v-model="item.unit_type"
+                                            class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
+                                        >
+                                            <option v-for="type in unitTypes" :key="type.id" :value="type.name">
+                                                {{ type.label }}
+                                            </option>
+                                        </select>
                                     </div>
 
                                     <div class="mt-3 space-y-1 md:mt-0 md:space-y-2">

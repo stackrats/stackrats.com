@@ -17,12 +17,13 @@ import { InvoiceStatus, type InvoiceStatusType, type RecurringFrequencyType } fr
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Mail, Edit, Trash2, Download, RotateCw, ChevronDown, CheckCircle2 } from 'lucide-vue-next';
 import { useEcho } from '@laravel/echo-vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 interface LineItem {
     description: string;
     quantity: number;
     unit_price: number;
+    unit_type: string;
     total?: number;
 }
 
@@ -31,6 +32,13 @@ interface InvoiceStatusModel {
     name: InvoiceStatusType;
     sort_order: number;
     label: string
+}
+
+interface InvoiceUnitTypeModel {
+    id: string;
+    name: string;
+    sort_order: number;
+    label: string;
 }
 
 interface RecurringFrequencyModel {
@@ -64,12 +72,26 @@ interface Invoice {
 interface Props {
     invoice: Invoice;
     statuses: InvoiceStatusModel[];
+    unitTypes: InvoiceUnitTypeModel[];
 }
 
 const props = defineProps<Props>();
 
 const invoice = ref(props.invoice);
 const showEmailSentAlert = ref(false);
+
+const getUnitTypeLabel = (name: string) => {
+    const type = props.unitTypes.find(t => t.name === name);
+    return type ? type.label : 'Quantity';
+};
+
+const quantityHeader = computed(() => {
+    if (invoice.value.line_items && invoice.value.line_items.length > 0) {
+        const firstItem = invoice.value.line_items[0];
+        return getUnitTypeLabel(firstItem.unit_type || 'quantity');
+    }
+    return 'Quantity';
+});
 
 // Listen for invoice email sent events
 type InvoiceEmailSentPayload = {
@@ -354,7 +376,7 @@ const calculateLineTotal = (item: LineItem) => {
                                 <thead class="bg-muted/50">
                                     <tr>
                                         <th class="text-left p-3 text-sm font-semibold">Description</th>
-                                        <th class="text-right p-3 text-sm font-semibold">Quantity</th>
+                                        <th class="text-right p-3 text-sm font-semibold">{{ quantityHeader }}</th>
                                         <th class="text-right p-3 text-sm font-semibold">Unit Price</th>
                                         <th class="text-right p-3 text-sm font-semibold">Total</th>
                                     </tr>

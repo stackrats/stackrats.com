@@ -84,7 +84,7 @@ const submit = () => {
                             <Input
                                 id="address"
                                 v-model="form.address"
-                                placeholder="123 Main St, City, State, ZIP"
+                                placeholder="123 Main St, City, State, Postal code"
                             />
                             <InputError :message="form.errors.address" />
                         </div>

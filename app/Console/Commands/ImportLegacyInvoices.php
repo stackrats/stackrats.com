@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Currencies;
 use App\Enums\InvoiceStatuses;
+use App\Enums\InvoiceUnitTypes;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\InvoiceStatus;
@@ -202,14 +204,22 @@ class ImportLegacyInvoices extends Command
             $qtyCol = -1;
             $rateCol = -1;
             $amountCol = -1;
+            $unitTypeName = InvoiceUnitTypes::QUANTITY->value;
 
             // Identify columns
             foreach ($headerRow as $i => $col) {
                 $colLower = strtolower(trim($col));
                 if (str_contains($colLower, 'description')) {
                     $descCol = $i;
-                } elseif (str_contains($colLower, 'months') || str_contains($colLower, 'quantity') || str_contains($colLower, 'qty')) {
+                } elseif (str_contains($colLower, 'months')) {
                     $qtyCol = $i;
+                    $unitTypeName = InvoiceUnitTypes::MONTHS->value;
+                } elseif (str_contains($colLower, 'days')) {
+                    $qtyCol = $i;
+                    $unitTypeName = InvoiceUnitTypes::DAYS->value;
+                } elseif (str_contains($colLower, 'quantity') || str_contains($colLower, 'qty')) {
+                    $qtyCol = $i;
+                    $unitTypeName = InvoiceUnitTypes::QUANTITY->value;
                 } elseif (str_contains($colLower, 'rate') || str_contains($colLower, 'price')) {
                     $rateCol = $i;
                 } elseif (str_contains($colLower, 'amount')) {
@@ -241,22 +251,27 @@ class ImportLegacyInvoices extends Command
                     $itemRate = ($rateCol !== -1 && isset($row[$rateCol])) ? $this->parseAmount($row[$rateCol]) : 0;
                     $itemAmount = ($amountCol !== -1 && isset($row[$amountCol])) ? $this->parseAmount($row[$amountCol]) : 0;
 
+                    if ($itemRate == 0 && $itemAmount != 0 && $itemQty != 0) {
+                        $itemRate = $itemAmount / $itemQty;
+                    }
+
                     $lineItems[] = [
                         'description' => $itemDesc,
                         'quantity' => $itemQty,
                         'unit_price' => $itemRate,
                         'amount' => $itemAmount,
-                        'currency' => 'NZD',
+                        'currency' => Currencies::NZD->value,
+                        'unit_type' => $unitTypeName,
                     ];
                 }
             }
         }
 
         if ($this->createInvoice($number, $user, $description, $email, $amount, $date, $name, $lineItems)) {
-            return 1;
+            return 0;
         }
 
-        return 0;
+        return 1;
     }
 
     protected function findKey(array $map, array $candidates): ?string
@@ -294,7 +309,7 @@ class ImportLegacyInvoices extends Command
 
         $this->info("Importing legacy invoice $number with amount $amount for contact {$contact->name}...");
 
-        $sentStatus = InvoiceStatus::where('name', InvoiceStatuses::SENT->value)->first();
+        $paidStatus = InvoiceStatus::where('name', InvoiceStatuses::PAID->value)->first();
 
         Invoice::create([
             'user_id' => $user->id,
@@ -303,12 +318,12 @@ class ImportLegacyInvoices extends Command
             'recipient_name' => $name,
             'recipient_email' => $email,
             'amount' => $amount,
-            'currency' => 'NZD',
+            'currency' => Currencies::NZD->value,
             'issue_date' => $date ?? now(),
             'due_date' => $date ?? now(),
             'description' => $description,
             'line_items' => $lineItems,
-            'invoice_status_id' => $sentStatus?->id,
+            'invoice_status_id' => $paidStatus?->id,
         ]);
 
         return true;

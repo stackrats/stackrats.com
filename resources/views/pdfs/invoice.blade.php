@@ -11,11 +11,12 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            color: #1f2937;
-            line-height: 1.4;
-            padding: 20px 30px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #374151;
+            line-height: 1.5;
+            padding: 30px;
             background: #ffffff;
+            font-size: 12px;
         }
 
         .invoice-container {
@@ -28,17 +29,13 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .logo-section {
-            flex: 1;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f3f4f6;
         }
 
         .logo-section img {
-            height: 35px;
+            height: 45px;
             width: auto;
         }
 
@@ -47,30 +44,33 @@
         }
 
         .invoice-type {
-            font-size: 26px;
-            font-weight: 300;
-            color: #9ca3af;
+            font-size: 32px;
+            font-weight: 700;
+            color: #111827;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: -0.5px;
             margin-bottom: 5px;
+            line-height: 1;
         }
 
         .invoice-number {
-            font-size: 11px;
+            font-size: 13px;
             color: #6b7280;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
+            font-weight: 500;
         }
 
         .invoice-date {
-            font-size: 10px;
-            color: #9ca3af;
+            font-size: 13px;
+            color: #6b7280;
         }
 
         /* Info Sections */
         .info-sections {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+            gap: 30px;
         }
 
         .info-section {
@@ -78,163 +78,175 @@
         }
 
         .info-section h3 {
-            font-size: 10px;
-            font-weight: 600;
-            color: #6b7280;
-            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #9ca3af;
+            margin-bottom: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         .info-section p {
-            font-size: 11px;
+            font-size: 13px;
             color: #1f2937;
-            margin-bottom: 3px;
-            line-height: 1.5;
+            margin-bottom: 4px;
+            line-height: 1.4;
         }
 
         .info-section .company-name {
-            font-weight: 600;
+            font-weight: 700;
             color: #111827;
-            margin-bottom: 2px;
+            font-size: 14px;
+            margin-bottom: 4px;
         }
 
         .info-section .email {
-            color: #3b82f6;
+            color: #4b5563;
+        }
+
+        /* Description Box */
+        .description-box {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #f3f4f6;
+        }
+
+        .description-box p {
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.6;
+            margin: 0;
         }
 
         /* Line Items Table */
         .line-items {
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: #f3f4f6;
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
         thead th {
-            padding: 10px 12px;
+            background: #333333;
+            color: #ffffff;
+            padding: 12px 16px;
             text-align: left;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
-            color: #6b7280;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid #e5e7eb;
         }
 
-        thead th:last-child,
-        tbody td:last-child {
+        thead th:first-child {
+            border-top-left-radius: 6px;
+            border-bottom-left-radius: 6px;
+        }
+
+        thead th:last-child {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
             text-align: right;
         }
 
-        tbody tr {
+        tbody td {
+            padding: 16px;
+            font-size: 13px;
+            color: #374151;
             border-bottom: 1px solid #f3f4f6;
         }
 
-        tbody td {
-            padding: 10px 12px;
-            font-size: 11px;
-            color: #1f2937;
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody td:last-child {
+            text-align: right;
+            font-weight: 600;
+            color: #111827;
         }
 
         tbody td.description {
             font-weight: 500;
-        }
-
-        tbody td.amount {
-            font-weight: 600;
+            color: #111827;
         }
 
         /* Totals */
         .totals-section {
             display: flex;
             justify-content: flex-end;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .totals {
-            width: 280px;
+            width: 300px;
         }
 
         .total-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            font-size: 11px;
+            padding: 10px 0;
+            font-size: 13px;
         }
 
         .total-row.subtotal {
             color: #6b7280;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #f3f4f6;
         }
 
         .total-row.gst {
             color: #6b7280;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #f3f4f6;
         }
 
         .total-row.final-total {
-            padding-top: 10px;
-            font-size: 14px;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 2px solid #111827;
+            font-size: 16px;
             font-weight: 700;
             color: #111827;
         }
 
-        .total-row .label {
-            font-weight: 500;
+        /* Payment Terms Box */
+        .payment-terms {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
         }
 
-        .total-row .value {
-            font-weight: 600;
+        .payment-terms h4 {
+            font-size: 12px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .payment-terms p {
+            font-size: 13px;
+            color: #b45309;
+            line-height: 1.5;
         }
 
         /* Footer Notes */
         .footer-notes {
             margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .footer-notes h4 {
-            font-size: 10px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 6px;
+            padding-top: 20px;
+            border-top: 1px solid #f3f4f6;
+            text-align: center;
         }
 
         .footer-notes p {
-            font-size: 9px;
-            color: #6b7280;
-            line-height: 1.4;
-        }
-
-        /* Payment Terms Box */
-        .payment-terms {
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 12px;
-            margin-top: 15px;
-            border-radius: 4px;
-        }
-
-        .payment-terms h4 {
-            font-size: 10px;
-            font-weight: 600;
-            color: #92400e;
-            margin-bottom: 5px;
-        }
-
-        .payment-terms p {
-            font-size: 9px;
-            color: #78350f;
-            line-height: 1.4;
+            font-size: 12px;
+            color: #9ca3af;
         }
     </style>
 </head>
@@ -294,8 +306,8 @@
 
         <!-- Description (if exists) -->
         @if($invoice->description)
-        <div style="margin-bottom: 30px; padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <p style="font-size: 13px; color: #374151; line-height: 1.6;">
+        <div class="description-box">
+            <p>
                 <strong>Description:</strong> {{ $invoice->description }}
             </p>
         </div>
@@ -307,7 +319,13 @@
                 <thead>
                     <tr>
                         <th>Description</th>
-                        <th style="text-align: center;">Months</th>
+                        <th style="text-align: center;">
+                            @php
+                                $unitType = $invoice->line_items[0]['unit_type'] ?? 'quantity';
+                                $unitTypeName = \App\Enums\InvoiceUnitTypes::tryFrom($unitType)?->label() ?? 'Quantity';
+                            @endphp
+                            {{ $unitTypeName }}
+                        </th>
                         <th style="text-align: right;">Rate</th>
                         <th style="text-align: right;">Amount</th>
                     </tr>
@@ -392,7 +410,6 @@
 
         <!-- Footer Notes -->
         <div class="footer-notes">
-            <h4>Notes</h4>
             <p>
                 Thank you! If you have any questions about this invoice, 
                 please contact {{ config('mail.from.address') }}.

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Currencies;
 use App\Enums\InvoiceStatuses;
+use App\Enums\InvoiceUnitTypes;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\InvoiceStatus;
@@ -11,6 +13,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +46,8 @@ class InvoiceController extends Controller
         return Inertia::render('invoices/Create', [
             'statuses' => InvoiceStatus::orderBy('sort_order')->get(),
             'frequencies' => RecurringFrequency::orderBy('sort_order')->get(),
+            'unitTypes' => $this->getUnitTypes(),
+            'currencies' => $this->getCurrencies(),
             'contacts' => Contact::where('user_id', Auth::id())->orderBy('name')->get(),
         ]);
     }
@@ -59,7 +64,7 @@ class InvoiceController extends Controller
             'recipient_address' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
             'gst' => 'numeric|min:0',
-            'currency' => 'required|string|size:3',
+            'currency' => ['required', 'string', 'size:3', Rule::enum(Currencies::class)],
             'description' => 'nullable|string',
             'line_items' => 'nullable|array',
             'issue_date' => 'required|date',
@@ -104,6 +109,7 @@ class InvoiceController extends Controller
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
             'statuses' => InvoiceStatus::orderBy('sort_order')->get(),
+            'unitTypes' => $this->getUnitTypes(),
         ]);
     }
 
@@ -120,6 +126,8 @@ class InvoiceController extends Controller
             'invoice' => $invoice,
             'statuses' => InvoiceStatus::orderBy('sort_order')->get(),
             'frequencies' => RecurringFrequency::orderBy('sort_order')->get(),
+            'unitTypes' => $this->getUnitTypes(),
+            'currencies' => $this->getCurrencies(),
             'contacts' => Contact::where('user_id', Auth::id())->orderBy('name')->get(),
         ]);
     }
@@ -138,7 +146,7 @@ class InvoiceController extends Controller
             'recipient_address' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
             'gst' => 'nullable|numeric|min:0',
-            'currency' => 'required|string|size:3',
+            'currency' => ['required', 'string', 'size:3', Rule::enum(Currencies::class)],
             'description' => 'nullable|string',
             'line_items' => 'nullable|array',
             'invoice_status_id' => 'required|exists:invoice_statuses,id',
@@ -244,12 +252,12 @@ class InvoiceController extends Controller
     private function getTaxRate(Invoice $invoice): float
     {
         $taxRates = [
-            'NZD' => 15.0,
-            'AUD' => 10.0,
-            'GBP' => 20.0,
-            'EUR' => 0.0,
-            'USD' => 0.0,
-            'CAD' => 0.0,
+            Currencies::NZD->value => 15.0,
+            Currencies::AUD->value => 10.0,
+            Currencies::GBP->value => 20.0,
+            Currencies::EUR->value => 0.0,
+            Currencies::USD->value => 0.0,
+            Currencies::CAD->value => 0.0,
         ];
 
         return $taxRates[$invoice->currency] ?? 0.0;
@@ -273,5 +281,30 @@ class InvoiceController extends Controller
             'yearly' => $date->addYear(),
             default => null,
         };
+    }
+
+    /**
+     * Get available unit types from Enum
+     */
+    private function getUnitTypes()
+    {
+        return collect(InvoiceUnitTypes::cases())->map(fn ($type, $index) => [
+            'id' => $type->value,
+            'name' => $type->value,
+            'label' => $type->label(),
+            'sort_order' => $index + 1,
+        ])->values();
+    }
+
+    /**
+     * Get available currencies from Enum
+     */
+    private function getCurrencies()
+    {
+        return collect(Currencies::cases())->map(fn ($currency) => [
+            'value' => $currency->value,
+            'label' => $currency->label(),
+            'symbol' => $currency->symbol(),
+        ])->values();
     }
 }
