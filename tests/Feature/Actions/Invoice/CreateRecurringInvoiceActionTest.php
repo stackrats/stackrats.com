@@ -3,9 +3,11 @@
 use App\Actions\Invoice\CreateRecurringInvoiceAction;
 use App\Enums\InvoiceStatuses;
 use App\Enums\RecurringFrequencies;
+use App\Enums\Timezones;
 use App\Models\Invoice;
 use App\Models\InvoiceStatus;
 use App\Models\RecurringFrequency;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 
 it('creates a new invoice from a recurring parent and updates the next date', function () {
@@ -17,7 +19,7 @@ it('creates a new invoice from a recurring parent and updates the next date', fu
     $parentInvoice = Invoice::factory()->create([
         'is_recurring' => true,
         'recurring_frequency_id' => $frequency->id,
-        'next_recurring_date' => Carbon::parse('2023-01-01'),
+        'next_recurring_at' => Carbon::parse('2023-01-01'),
         'invoice_status_id' => $sentStatus->id,
         'amount' => 100.00,
         'issue_date' => Carbon::parse('2022-12-01'),
@@ -39,7 +41,7 @@ it('creates a new invoice from a recurring parent and updates the next date', fu
 
     // Check parent updated
     $parentInvoice->refresh();
-    expect($parentInvoice->next_recurring_date->format('Y-m-d'))->toBe('2023-02-01');
+    expect($parentInvoice->next_recurring_at->format('Y-m-d'))->toBe('2023-02-01');
 });
 
 it('handles weekly frequency', function () {
@@ -49,7 +51,7 @@ it('handles weekly frequency', function () {
     $parentInvoice = Invoice::factory()->create([
         'is_recurring' => true,
         'recurring_frequency_id' => $frequency->id,
-        'next_recurring_date' => Carbon::parse('2023-01-01'),
+        'next_recurring_at' => Carbon::parse('2023-01-01'),
         'invoice_status_id' => $sentStatus->id,
     ]);
 
@@ -57,5 +59,55 @@ it('handles weekly frequency', function () {
     $action->execute($parentInvoice);
 
     $parentInvoice->refresh();
-    expect($parentInvoice->next_recurring_date->format('Y-m-d'))->toBe('2023-01-08');
+    expect($parentInvoice->next_recurring_at->format('Y-m-d'))->toBe('2023-01-08');
+});
+
+it('creates invoice with issue date respecting user timezone', function () {
+    // Arrange
+    // Create user with Pacific/Auckland timezone (UTC+13 in DST Jan)
+    $user = User::factory()->create();
+    $user->userSetting()->update([
+        'timezone' => Timezones::PACIFIC_AUCKLAND,
+    ]);
+
+    $frequency = RecurringFrequency::factory()->create(['name' => RecurringFrequencies::MONTHLY->value]);
+    $sentStatus = InvoiceStatus::factory()->create(['name' => InvoiceStatuses::SENT->value]);
+
+    // 2023-01-01 12:00:00 UTC
+    // In Pacific/Auckland (UTC+13), this is 2023-01-02 01:00:00
+    $utcDate = Carbon::parse('2023-01-01 12:00:00', 'UTC');
+
+    $parentInvoice = Invoice::factory()->create([
+        'user_id' => $user->id,
+        'is_recurring' => true,
+        'recurring_frequency_id' => $frequency->id,
+        'next_recurring_at' => $utcDate,
+        'invoice_status_id' => $sentStatus->id,
+        'issue_date' => Carbon::parse('2022-12-01'),
+        'due_date' => Carbon::parse('2022-12-08'),
+    ]);
+
+    // Act
+    $action = app(CreateRecurringInvoiceAction::class);
+    $newInvoice = $action->execute($parentInvoice);
+
+    // Assert
+    // The issue date should be 2023-01-02 because of the timezone conversion
+    expect($newInvoice->issue_date->format('Y-m-d'))->toBe('2023-01-02');
+
+    // Verify the next recurring date is also calculated correctly
+    // The parent's next_recurring_at should be updated to next month
+    // 2023-01-02 01:00:00 + 1 month = 2023-02-02 01:00:00 Auckland time
+    // Converted back to UTC: 2023-02-01 12:00:00 UTC
+    $parentInvoice->refresh();
+
+    // We check the date part of the next recurring at in the user's timezone
+    $nextRecurringLocal = $parentInvoice->next_recurring_at->setTimezone(Timezones::PACIFIC_AUCKLAND->value);
+    expect($nextRecurringLocal->format('Y-m-d'))->toBe('2023-02-02');
+
+    // Verify the database has the correct UTC value for next_recurring_at
+    $this->assertDatabaseHas('invoices', [
+        'id' => $parentInvoice->id,
+        'next_recurring_at' => '2023-02-01 12:00:00',
+    ]);
 });

@@ -26,12 +26,20 @@ class SeedAdminUserCommand extends Command
      */
     public function handle()
     {
-        User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => 'matt@stackrats.com'],
             [
                 'name' => config('mail.from.name'),
                 'password' => 'password',
             ]
         );
+
+        $user->userSetting()->updateOrCreate(
+            [],
+            [
+                'timezone' => \App\Enums\Timezones::ASIA_HO_CHI_MINH,
+            ]
+        );
+
     }
 }

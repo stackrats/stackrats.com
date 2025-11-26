@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,7 +16,8 @@ import {
     Eye, 
     Edit,
     RotateCw,
-    CheckCircle2
+    CheckCircle2,
+    Search
 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { useEcho } from '@laravel/echo-vue';
@@ -63,12 +65,29 @@ interface Invoice {
 
 interface Props {
     invoices: Invoice[];
+    filters?: {
+        search?: string;
+    };
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const page = usePage();
 const user = page.props.auth.user;
+
+const search = ref(props.filters?.search || '');
+
+let timeout: ReturnType<typeof setTimeout>;
+watch(search, (value) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        router.get('/invoices', { search: value }, {
+            preserveState: true,
+            replace: true,
+            preserveScroll: true
+        });
+    }, 300);
+});
 
 useEcho(`App.Models.User.${user.id}`, 'InvoiceCreated', () => {
     router.reload();
@@ -169,6 +188,15 @@ const sendInvoice = (id: number) => {
                         Create Invoice
                     </Button>
                 </Link>
+            </div>
+
+            <div class="relative w-full max-w-sm">
+                <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    v-model="search"
+                    placeholder="Search invoice number or contact..."
+                    class="pl-8"
+                />
             </div>
 
             <!-- Invoices Grid -->

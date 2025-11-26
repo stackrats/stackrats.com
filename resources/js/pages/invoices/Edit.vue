@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import DateInput from '@/components/DateInput.vue';
+import DateTimeInput from '@/components/DateTimeInput.vue';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/InputError.vue';
@@ -112,7 +113,7 @@ const form = useForm({
     due_date: props.invoice.due_date.split('T')[0],
     is_recurring: props.invoice.is_recurring,
     recurring_frequency_id: props.invoice.recurring_frequency?.id || '',
-    next_recurring_date: props.invoice.next_recurring_date ? props.invoice.next_recurring_date.split('T')[0] : '',
+    next_recurring_date: props.invoice.next_recurring_date || '',
 });
 
 const defaultUnitType = props.unitTypes.find(t => t.name === 'quantity')?.name || props.unitTypes[0]?.name || '';
@@ -304,6 +305,15 @@ onMounted(() => {
                                 <p class="text-xs text-muted-foreground">
                                     Adjust the description, dates, status, currency and tax.
                                 </p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <Label>Invoice number</Label>
+                                <Input
+                                    :model-value="props.invoice.invoice_number"
+                                    disabled
+                                    class="bg-muted"
+                                />
                             </div>
 
                             <div class="space-y-2">
@@ -540,7 +550,7 @@ onMounted(() => {
 
                                     <div class="space-y-2">
                                         <Label for="next_recurring_date">Next recurring date</Label>
-                                        <DateInput
+                                        <DateTimeInput
                                             id="next_recurring_date"
                                             v-model="form.next_recurring_date"
                                         />

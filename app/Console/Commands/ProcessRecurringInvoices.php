@@ -36,8 +36,8 @@ class ProcessRecurringInvoices extends Command
         $this->info("Processing recurring invoices for {$date->toDateString()}...");
 
         $invoices = Invoice::where('is_recurring', true)
-            ->where('next_recurring_date', '<=', $date)
-            ->whereNotNull('next_recurring_date')
+            ->where('next_recurring_at', '<=', $date)
+            ->whereNotNull('next_recurring_at')
             ->whereHas('invoiceStatus', function ($query) {
                 $query->where('name', '!=', InvoiceStatuses::DRAFT->value);
             })

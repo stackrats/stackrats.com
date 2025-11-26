@@ -2,6 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\RecurringFrequencies;
+use App\Models\Invoice;
+use App\Models\RecurringFrequency;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
@@ -42,6 +45,21 @@ class SetupApplication extends Command
             ]);
         } else {
             $this->info("No legacy invoices found at $invoicePath. Skipping import.");
+        }
+
+        $this->info('Updating specific invoice to be recurring...');
+        $invoice = Invoice::where('invoice_number', '392250707')->first();
+
+        if ($invoice) {
+            $monthlyFrequency = RecurringFrequency::where('name', RecurringFrequencies::MONTHLY->value)->first();
+
+            $invoice->update([
+                'is_recurring' => true,
+                'recurring_frequency_id' => $monthlyFrequency?->id,
+                'next_recurring_at' => '2025-12-02',
+            ]);
+
+            $this->info('Updated invoice 392250707 to be recurring.');
         }
 
         $this->info('Application setup complete.');

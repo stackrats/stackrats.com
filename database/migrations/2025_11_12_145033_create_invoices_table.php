@@ -29,7 +29,7 @@ return new class extends Migration
             $table->date('due_date');
             $table->boolean('is_recurring')->default(false);
             $table->foreignUuid('recurring_frequency_id')->nullable()->constrained('recurring_frequencies')->onDelete('restrict');
-            $table->date('next_recurring_date')->nullable();
+            $table->timestamp('next_recurring_at')->nullable();
             $table->timestamp('last_sent_at')->nullable();
             $table->timestamps();
         });

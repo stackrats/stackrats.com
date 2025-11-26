@@ -37,7 +37,7 @@ it('processes recurring invoices and pushes email job to queue', function () {
     $invoice = Invoice::factory()->create([
         'is_recurring' => true,
         'recurring_frequency_id' => $monthly->id,
-        'next_recurring_date' => now(),
+        'next_recurring_at' => now(),
         'invoice_number' => 'INV-TEST-001',
         'invoice_status_id' => $sentStatus->id,
     ]);
@@ -56,7 +56,7 @@ it('processes recurring invoices and pushes email job to queue', function () {
 
     // Assert parent invoice was updated
     $invoice->refresh();
-    expect($invoice->next_recurring_date->toDateString())->toBe(now()->addMonth()->toDateString());
+    expect($invoice->next_recurring_at->toDateString())->toBe(now()->addMonth()->toDateString());
 });
 
 it('processes recurring invoices with custom date option', function () {
@@ -66,11 +66,11 @@ it('processes recurring invoices with custom date option', function () {
     $sentStatus = InvoiceStatus::where('name', InvoiceStatuses::SENT->value)->first();
 
     // Create a recurring invoice due next month
-    $futureDate = now()->addMonth();
+    $futureDate = now()->addMonth()->startOfDay();
     $invoice = Invoice::factory()->create([
         'is_recurring' => true,
         'recurring_frequency_id' => $monthly->id,
-        'next_recurring_date' => $futureDate,
+        'next_recurring_at' => $futureDate,
         'invoice_number' => 'INV-TEST-FUTURE',
         'invoice_status_id' => $sentStatus->id,
     ]);
@@ -83,7 +83,7 @@ it('processes recurring invoices with custom date option', function () {
 
     $invoice->refresh();
     // Should be advanced by another month from the future date
-    expect($invoice->next_recurring_date->toDateString())->toBe($futureDate->copy()->addMonth()->toDateString());
+    expect($invoice->next_recurring_at->toDateString())->toBe($futureDate->copy()->addMonth()->toDateString());
 });
 
 it('does not process invoices not yet due', function () {
@@ -96,7 +96,7 @@ it('does not process invoices not yet due', function () {
     $invoice = Invoice::factory()->create([
         'is_recurring' => true,
         'recurring_frequency_id' => $monthly->id,
-        'next_recurring_date' => now()->addDay(),
+        'next_recurring_at' => now()->addDay(),
         'invoice_number' => 'INV-TEST-NOT-DUE',
         'invoice_status_id' => $sentStatus->id,
     ]);
@@ -117,7 +117,7 @@ it('does not process draft invoices', function () {
     $invoice = Invoice::factory()->create([
         'is_recurring' => true,
         'recurring_frequency_id' => $monthly->id,
-        'next_recurring_date' => now(),
+        'next_recurring_at' => now(),
         'invoice_number' => 'INV-TEST-DRAFT',
         'invoice_status_id' => $draftStatus->id,
     ]);

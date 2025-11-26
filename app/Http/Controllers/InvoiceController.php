@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\Currencies;
 use App\Enums\InvoiceStatuses;
 use App\Enums\InvoiceUnitTypes;
+use App\Enums\Timezones;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\InvoiceStatus;
 use App\Models\RecurringFrequency;
+use App\Shared\Traits\FormatDateTime;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,22 +21,42 @@ use Inertia\Response;
 
 class InvoiceController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, FormatDateTime;
 
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $authId = Auth::id();
+        $search = $request->input('search');
 
         $invoices = Invoice::where('user_id', $authId)
+            ->when($search, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('recipient_name', 'like', "%{$search}%");
+                });
+            })
             ->with(['invoiceStatus', 'recurringFrequency'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($invoice) {
+                if ($invoice->next_recurring_at) {
+                    $invoice->next_recurring_date = $this->parseUtcDateTimeAsLocal($invoice->next_recurring_at, $invoice->user, 'Y-m-d H:i:s');
+                }
+                if ($invoice->last_sent_at) {
+                    $invoice->last_sent_at_formatted = $this->parseUtcDateTimeAsLocal($invoice->last_sent_at, $invoice->user, 'Y-m-d H:i:s');
+                }
+
+                return $invoice;
+            });
 
         return Inertia::render('invoices/Index', [
             'invoices' => $invoices,
+            'filters' => [
+                'search' => $search,
+            ],
         ]);
     }
 
@@ -71,21 +93,26 @@ class InvoiceController extends Controller
             'due_date' => 'required|date|after_or_equal:issue_date',
             'is_recurring' => 'boolean',
             'recurring_frequency_id' => 'nullable|exists:recurring_frequencies,id',
-            'next_recurring_date' => 'nullable|date|after:issue_date',
+            'next_recurring_date' => 'nullable|date|after_or_equal:issue_date',
         ]);
 
         $draftStatus = InvoiceStatus::where('name', InvoiceStatuses::DRAFT->value)->first();
 
         $authId = Auth::id();
 
+        if (isset($validated['next_recurring_date'])) {
+            $validated['next_recurring_at'] = $this->parseLocalDateTimeAsUtc($validated['next_recurring_date']);
+            unset($validated['next_recurring_date']);
+        }
+
         $invoice = new Invoice($validated);
         $invoice->user_id = $authId;
         $invoice->invoice_number = $invoice->generateInvoiceNumber();
         $invoice->invoice_status_id = $draftStatus->id;
 
-        if ($invoice->is_recurring && $invoice->recurring_frequency_id && empty($invoice->next_recurring_date)) {
+        if ($invoice->is_recurring && $invoice->recurring_frequency_id && empty($invoice->next_recurring_at)) {
             $frequency = RecurringFrequency::find($invoice->recurring_frequency_id);
-            $invoice->next_recurring_date = $this->calculateNextRecurringDate(
+            $invoice->next_recurring_at = $this->calculateNextRecurringDate(
                 $invoice->issue_date,
                 $frequency
             );
@@ -106,6 +133,14 @@ class InvoiceController extends Controller
 
         $invoice->load(['invoiceStatus', 'recurringFrequency']);
 
+        if ($invoice->next_recurring_at) {
+            $invoice->next_recurring_date = $this->parseUtcDateTimeAsLocal($invoice->next_recurring_at, $invoice->user, 'Y-m-d H:i:s');
+        }
+
+        if ($invoice->last_sent_at) {
+            $invoice->last_sent_at_formatted = $this->parseUtcDateTimeAsLocal($invoice->last_sent_at, $invoice->user, 'Y-m-d H:i:s');
+        }
+
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
             'statuses' => InvoiceStatus::orderBy('sort_order')->get(),
@@ -121,6 +156,14 @@ class InvoiceController extends Controller
         $this->authorize('update', $invoice);
 
         $invoice->load(['invoiceStatus', 'recurringFrequency']);
+
+        if ($invoice->next_recurring_at) {
+            $invoice->next_recurring_date = $this->parseUtcDateTimeAsLocal($invoice->next_recurring_at, $invoice->user, 'Y-m-d H:i:s');
+        }
+
+        if ($invoice->last_sent_at) {
+            $invoice->last_sent_at_formatted = $this->parseUtcDateTimeAsLocal($invoice->last_sent_at, $invoice->user, 'Y-m-d H:i:s');
+        }
 
         return Inertia::render('invoices/Edit', [
             'invoice' => $invoice,
@@ -154,14 +197,19 @@ class InvoiceController extends Controller
             'due_date' => 'required|date|after_or_equal:issue_date',
             'is_recurring' => 'boolean',
             'recurring_frequency_id' => 'nullable|exists:recurring_frequencies,id',
-            'next_recurring_date' => 'nullable|date|after:issue_date',
+            'next_recurring_date' => 'nullable|date|after_or_equal:issue_date',
         ]);
+
+        if (isset($validated['next_recurring_date'])) {
+            $validated['next_recurring_at'] = $this->parseLocalDateTimeAsUtc($validated['next_recurring_date']);
+            unset($validated['next_recurring_date']);
+        }
 
         $invoice->update($validated);
 
-        if ($invoice->is_recurring && $invoice->recurring_frequency_id && empty($invoice->next_recurring_date)) {
+        if ($invoice->is_recurring && $invoice->recurring_frequency_id && empty($invoice->next_recurring_at)) {
             $frequency = RecurringFrequency::find($invoice->recurring_frequency_id);
-            $invoice->next_recurring_date = $this->calculateNextRecurringDate(
+            $invoice->next_recurring_at = $this->calculateNextRecurringDate(
                 $invoice->issue_date,
                 $frequency
             );
@@ -272,15 +320,25 @@ class InvoiceController extends Controller
             return null;
         }
 
-        $date = is_string($currentDate) ? \Carbon\Carbon::parse($currentDate) : $currentDate;
+        // Parse issue_date in user timezone
+        $dateString = is_string($currentDate) ? $currentDate : $currentDate->format('Y-m-d');
 
-        return match ($frequency->name) {
+        // Use trait to parse local date to UTC, but we need to do the calculation first?
+        // The trait parses string to UTC.
+        // Here we want to add time in local timezone then convert back.
+
+        $timezone = Auth::user()->userSetting->timezone->value;
+        $date = \Carbon\Carbon::parse($dateString, $timezone)->startOfDay();
+
+        $nextDate = match ($frequency->name) {
             'weekly' => $date->addWeek(),
             'monthly' => $date->addMonth(),
             'quarterly' => $date->addMonths(3),
             'yearly' => $date->addYear(),
             default => null,
         };
+
+        return $nextDate ? $nextDate->setTimezone(Timezones::UTC->value) : null;
     }
 
     /**

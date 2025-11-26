@@ -55,7 +55,7 @@ class InvoiceSeeder extends Seeder
                 'due_date' => now()->addDays(15),
                 'is_recurring' => true,
                 'recurring_frequency_id' => $monthlyFrequency->id,
-                'next_recurring_date' => now()->addMonth(),
+                'next_recurring_at' => now()->addMonth(),
                 'last_sent_at' => now()->subDays(15),
             ],
             [
@@ -106,7 +106,7 @@ class InvoiceSeeder extends Seeder
                 'due_date' => now()->subDays(15),
                 'is_recurring' => true,
                 'recurring_frequency_id' => $quarterlyFrequency->id,
-                'next_recurring_date' => now()->addMonths(3),
+                'next_recurring_at' => now()->addMonths(3),
                 'last_sent_at' => now()->subDays(45),
             ],
             [
@@ -125,7 +125,7 @@ class InvoiceSeeder extends Seeder
                 'due_date' => now()->addDays(25),
                 'is_recurring' => true,
                 'recurring_frequency_id' => $monthlyFrequency->id,
-                'next_recurring_date' => now()->addMonth(),
+                'next_recurring_at' => now()->addMonth(),
                 'last_sent_at' => now()->subDays(5),
             ],
         ];

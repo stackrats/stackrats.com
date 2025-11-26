@@ -214,26 +214,26 @@
 
         /* Payment Terms Box */
         .payment-terms {
-            background: #fffbeb;
-            border: 1px solid #fcd34d;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            border-left: 4px solid #f59e0b;
         }
 
         .payment-terms h4 {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
-            color: #92400e;
-            margin-bottom: 8px;
+            color: #4b5563;
+            margin-bottom: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         .payment-terms p {
             font-size: 13px;
-            color: #b45309;
-            line-height: 1.5;
+            color: #374151;
+            line-height: 1.6;
         }
 
         /* Footer Notes */
@@ -287,19 +287,6 @@
                     @foreach(explode("\n", $paymentDetails['address']) as $line)
                         <p>{{ $line }}</p>
                     @endforeach
-                @endif
-            </div>
-
-            <div class="info-section">
-                <h3>Payment terms</h3>
-                <p>Payment due: {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}</p>
-                @if(isset($paymentDetails['surcharge']))
-                <p>{{ $paymentDetails['surcharge'] }}</p>
-                @endif
-                @if($invoice->is_recurring)
-                <p style="margin-top: 8px; color: #3b82f6; font-weight: 500;">
-                    Recurring: {{ ucfirst($invoice->recurring_frequency) }}
-                </p>
                 @endif
             </div>
         </div>
@@ -400,11 +387,16 @@
         <!-- Payment Terms Notice -->
         @if($invoice->invoiceStatus->name !== \App\Enums\InvoiceStatuses::PAID->value)
         <div class="payment-terms">
-            <h4>Payment instructions</h4>
+            <h4>Payment Instructions</h4>
             <p>
-                Payment is due by {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}. 
-                Please reference invoice number {{ $invoice->invoice_number }} in your payment.
+                <strong>Due Date:</strong> {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}<br>
+                <strong>Reference:</strong> {{ $invoice->invoice_number }}
             </p>
+            @if(isset($paymentDetails['surcharge']))
+            <p style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                {{ $paymentDetails['surcharge'] }}
+            </p>
+            @endif
         </div>
         @endif
 

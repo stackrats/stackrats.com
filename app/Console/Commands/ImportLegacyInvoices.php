@@ -153,13 +153,38 @@ class ImportLegacyInvoices extends Command
 
         // Date: "Date issued,04/28/2024"
         if (preg_match('/Date issued\s*,?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i', $text, $dateMatches)) {
-            try {
-                $date = \Carbon\Carbon::createFromFormat('m/d/Y', $dateMatches[1]); // The example showed 04/28/2024 which is m/d/Y
-            } catch (\Exception $e) {
+            $dateString = $dateMatches[1];
+            $formats = ['m/d/Y', 'd/m/Y', 'm/d/y', 'd/m/y'];
+
+            foreach ($formats as $format) {
                 try {
-                    $date = \Carbon\Carbon::createFromFormat('d/m/Y', $dateMatches[1]);
+                    $parsedDate = \Carbon\Carbon::createFromFormat($format, $dateString);
+                    $lastErrors = \DateTime::getLastErrors();
+
+                    if (is_array($lastErrors) && ($lastErrors['warning_count'] > 0 || $lastErrors['error_count'] > 0)) {
+                        continue;
+                    }
+
+                    // If we used 'Y' (4 digits) but got a year < 1000, it was likely a 2-digit year
+                    if (str_contains($format, 'Y') && $parsedDate->year < 1000) {
+                        continue;
+                    }
+
+                    $date = $parsedDate;
+                    break;
                 } catch (\Exception $e) {
+                    continue;
                 }
+            }
+        }
+
+        // Check for poisoned date (2025-11-26) - likely export date
+        $poisonedDate = \Carbon\Carbon::create(2025, 11, 26)->startOfDay();
+        if ($date->startOfDay()->eq($poisonedDate)) {
+            $invoiceDate = $this->parseDateFromInvoiceNumber($number);
+            if ($invoiceDate) {
+                $this->info("Date {$date->format('Y-m-d')} looks like export date. Using date from invoice number: ".$invoiceDate->format('Y-m-d'));
+                $date = $invoiceDate;
             }
         }
 
@@ -285,6 +310,27 @@ class ImportLegacyInvoices extends Command
         return null;
     }
 
+    protected function parseDateFromInvoiceNumber(string $number): ?\Carbon\Carbon
+    {
+        // Expecting format XXXYYMMDD or similar where last 6 are YYMMDD
+        if (preg_match('/(\d{2})(\d{2})(\d{2})$/', $number, $matches)) {
+            $year = (int) $matches[1];
+            $month = (int) $matches[2];
+            $day = (int) $matches[3];
+
+            // Adjust year to 20YY
+            $year += 2000;
+
+            try {
+                return \Carbon\Carbon::createFromDate($year, $month, $day);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
     protected function parseAmount(string $amount): float
     {
         // Remove non-numeric characters except dot
@@ -295,10 +341,18 @@ class ImportLegacyInvoices extends Command
 
     protected function createInvoice(string $number, User $user, string $description, string $email = 'legacy@example.com', float $amount = 0.0, $date = null, string $name = 'Legacy Import', array $lineItems = []): bool
     {
-        if (Invoice::where('invoice_number', $number)->exists()) {
-            $this->info("Invoice $number already exists. Skipping.");
+        $invoice = Invoice::where('invoice_number', $number)->first();
 
-            return false;
+        if ($invoice) {
+            $invoice->update([
+                'issue_date' => $date ?? now(),
+                'due_date' => $date ?? now(),
+                'amount' => $amount,
+                'description' => $description,
+                'line_items' => $lineItems,
+            ]);
+
+            return true;
         }
 
         // Find or create contact

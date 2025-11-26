@@ -29,7 +29,7 @@ class Invoice extends Model
         'due_date',
         'is_recurring',
         'recurring_frequency_id',
-        'next_recurring_date',
+        'next_recurring_at',
         'last_sent_at',
     ];
 
@@ -39,7 +39,7 @@ class Invoice extends Model
         'gst' => DecimalToIntCast::class,
         'issue_date' => 'date',
         'due_date' => 'date',
-        'next_recurring_date' => 'date',
+        'next_recurring_at' => 'datetime',
         'last_sent_at' => 'datetime',
         'is_recurring' => 'boolean',
     ];

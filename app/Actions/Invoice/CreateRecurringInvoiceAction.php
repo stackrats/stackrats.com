@@ -4,6 +4,7 @@ namespace App\Actions\Invoice;
 
 use App\Enums\InvoiceStatuses;
 use App\Enums\RecurringFrequencies;
+use App\Enums\Timezones;
 use App\Models\Invoice;
 use App\Models\InvoiceStatus;
 
@@ -12,7 +13,8 @@ class CreateRecurringInvoiceAction
     public function execute(Invoice $parentInvoice): Invoice
     {
         // 1. Calculate new dates
-        $issueDate = $parentInvoice->next_recurring_date;
+        $timezone = $parentInvoice->user->userSetting->timezone->value;
+        $issueDate = $parentInvoice->next_recurring_at->setTimezone($timezone);
 
         // Calculate terms (diff between original issue and due)
         // If dates are null, default to 0 days or some standard
@@ -27,7 +29,7 @@ class CreateRecurringInvoiceAction
         $newInvoice = $parentInvoice->replicate([
             'is_recurring',
             'recurring_frequency_id',
-            'next_recurring_date',
+            'next_recurring_at',
             'invoice_number',
             'issue_date',
             'due_date',
@@ -65,9 +67,11 @@ class CreateRecurringInvoiceAction
             return;
         }
 
+        $timezone = $invoice->user->userSetting->timezone->value;
+
         // We use copy() to avoid modifying the original instance in place before update if it was passed by ref (objects are)
         // But here we want to update the DB.
-        $currentDate = $invoice->next_recurring_date->copy();
+        $currentDate = $invoice->next_recurring_at->copy()->setTimezone($timezone);
 
         $nextDate = match ($frequency->name) {
             RecurringFrequencies::WEEKLY->value => $currentDate->addWeek(),
@@ -77,6 +81,6 @@ class CreateRecurringInvoiceAction
             default => $currentDate->addMonth(),
         };
 
-        $invoice->update(['next_recurring_date' => $nextDate]);
+        $invoice->update(['next_recurring_at' => $nextDate->setTimezone(Timezones::UTC->value)]);
     }
 }

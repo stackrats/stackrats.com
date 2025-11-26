@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import DateInput from '@/components/DateInput.vue';
+import DateTimeInput from '@/components/DateTimeInput.vue';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/InputError.vue';
@@ -487,7 +488,7 @@ const submit = () => {
 
                                     <div class="space-y-2">
                                         <Label for="next_recurring_date">Next recurring date</Label>
-                                        <DateInput
+                                        <DateTimeInput
                                             id="next_recurring_date"
                                             v-model="form.next_recurring_date"
                                         />

@@ -42,7 +42,7 @@ class InvoiceFactory extends Factory
             'due_date' => $dueDate,
             'is_recurring' => false,
             'recurring_frequency_id' => null,
-            'next_recurring_date' => null,
+            'next_recurring_at' => null,
             'last_sent_at' => null,
         ];
     }
@@ -55,7 +55,7 @@ class InvoiceFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'is_recurring' => true,
             'recurring_frequency_id' => \App\Models\RecurringFrequency::inRandomOrder()->first()?->id,
-            'next_recurring_date' => fake()->dateTimeBetween('+1 day', '+90 days'),
+            'next_recurring_at' => fake()->dateTimeBetween('+1 day', '+90 days'),
         ]);
     }
 
