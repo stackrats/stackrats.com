@@ -36,7 +36,7 @@ class SetupApplication extends Command
         $this->info('Seeding admin user...');
         $this->call('app:seed-admin-user-command');
 
-        $invoicePath = $this->option('invoice-path') ?: storage_path('app/legacy_import_ods');
+        $invoicePath = $this->option('invoice-path') ?: storage_path('app/private/legacy_import_ods');
 
         if (File::isDirectory($invoicePath)) {
             $this->info("Importing legacy invoices from $invoicePath...");
