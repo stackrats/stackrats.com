@@ -20,6 +20,7 @@ test('profile information can be updated', function () {
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'timezone' => \App\Enums\Timezones::UTC->value,
         ]);
 
     $response
@@ -31,6 +32,7 @@ test('profile information can be updated', function () {
     expect($user->name)->toBe('Test User');
     expect($user->email)->toBe('test@example.com');
     expect($user->email_verified_at)->toBeNull();
+    expect($user->userSetting->timezone)->toBe(\App\Enums\Timezones::UTC);
 });
 
 test('email verification status is unchanged when the email address is unchanged', function () {
@@ -41,6 +43,7 @@ test('email verification status is unchanged when the email address is unchanged
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'email' => $user->email,
+            'timezone' => \App\Enums\Timezones::UTC->value,
         ]);
 
     $response

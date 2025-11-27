@@ -13,11 +13,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed lookup tables first
+        $this->call([
+            InvoiceStatusSeeder::class,
+            RecurringFrequencySeeder::class,
+        ]);
+
         // User::factory(10)->create();
 
-        User::factory()->create([
+        $user = User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+        ]);
+
+        $user->userSetting()->create([
+            'timezone' => \App\Enums\Timezones::PACIFIC_AUCKLAND,
         ]);
     }
 }

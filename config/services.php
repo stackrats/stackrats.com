@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'pdf_service' => [
+        'token' => env('PDF_SERVICE_TOKEN'),
+        'url' => env('PDF_SERVICE_URL', 'https://pdf-service.stackrats.dev/generate-pdf'),
+    ],
+
 ];

@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Docker URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used by the PDF service to access assets. Since the PDF
+    | service runs in a separate Docker container, it needs to use the
+    | container name instead of localhost to resolve URLs.
+    |
+    */
+
+    'docker_url' => env('APP_DOCKER_URL', 'http://stackrats_app'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

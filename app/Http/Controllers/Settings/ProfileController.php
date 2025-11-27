@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Enums\Timezones;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -21,6 +22,8 @@ class ProfileController extends Controller
         return Inertia::render('settings/Profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'timezones' => Timezones::cases(),
+            'currentTimezone' => $request->user()->userSetting?->timezone->value ?? Timezones::UTC->value,
         ]);
     }
 
@@ -36,6 +39,11 @@ class ProfileController extends Controller
         }
 
         $request->user()->save();
+
+        $request->user()->userSetting()->updateOrCreate(
+            [],
+            ['timezone' => $request->validated('timezone')]
+        );
 
         return to_route('profile.edit');
     }
