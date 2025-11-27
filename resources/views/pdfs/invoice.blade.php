@@ -13,10 +13,10 @@
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             color: #374151;
-            line-height: 1.5;
-            padding: 30px;
+            line-height: 1.4;
+            padding: 20px;
             background: #ffffff;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .invoice-container {
@@ -29,13 +29,13 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
             border-bottom: 2px solid #f3f4f6;
         }
 
         .logo-section img {
-            height: 45px;
+            height: 35px;
             width: auto;
         }
 
@@ -44,24 +44,24 @@
         }
 
         .invoice-type {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 700;
             color: #111827;
             text-transform: uppercase;
             letter-spacing: -0.5px;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             line-height: 1;
         }
 
         .invoice-number {
-            font-size: 13px;
+            font-size: 12px;
             color: #6b7280;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             font-weight: 500;
         }
 
         .invoice-date {
-            font-size: 13px;
+            font-size: 12px;
             color: #6b7280;
         }
 
@@ -69,8 +69,8 @@
         .info-sections {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
-            gap: 30px;
+            margin-bottom: 10px;
+            gap: 20px;
         }
 
         .info-section {
@@ -78,26 +78,26 @@
         }
 
         .info-section h3 {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             color: #9ca3af;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .info-section p {
-            font-size: 13px;
+            font-size: 12px;
             color: #1f2937;
-            margin-bottom: 4px;
-            line-height: 1.4;
+            margin-bottom: 2px;
+            line-height: 1.3;
         }
 
         .info-section .company-name {
             font-weight: 700;
             color: #111827;
-            font-size: 14px;
-            margin-bottom: 4px;
+            font-size: 13px;
+            margin-bottom: 2px;
         }
 
         .info-section .email {
@@ -106,23 +106,23 @@
 
         /* Description Box */
         .description-box {
-            margin-bottom: 30px;
-            padding: 20px;
+            margin-bottom: 15px;
+            padding: 10px;
             background: #f9fafb;
             border-radius: 8px;
             border: 1px solid #f3f4f6;
         }
 
         .description-box p {
-            font-size: 13px;
+            font-size: 12px;
             color: #374151;
-            line-height: 1.6;
+            line-height: 1.4;
             margin: 0;
         }
 
         /* Line Items Table */
         .line-items {
-            margin-bottom: 30px;
+            margin-bottom: 15px;
         }
 
         table {
@@ -134,9 +134,9 @@
         thead th {
             background: #333333;
             color: #ffffff;
-            padding: 12px 16px;
+            padding: 8px 10px;
             text-align: left;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -154,8 +154,8 @@
         }
 
         tbody td {
-            padding: 16px;
-            font-size: 13px;
+            padding: 8px 10px;
+            font-size: 12px;
             color: #374151;
             border-bottom: 1px solid #f3f4f6;
         }
@@ -179,18 +179,18 @@
         .totals-section {
             display: flex;
             justify-content: flex-end;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .totals {
-            width: 300px;
+            width: 250px;
         }
 
         .total-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            font-size: 13px;
+            padding: 6px 0;
+            font-size: 12px;
         }
 
         .total-row.subtotal {
@@ -204,48 +204,48 @@
         }
 
         .total-row.final-total {
-            margin-top: 10px;
-            padding-top: 15px;
+            margin-top: 5px;
+            padding-top: 10px;
             border-top: 2px solid #111827;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             color: #111827;
         }
 
         /* Payment Terms Box */
         .payment-terms {
-            margin-top: 30px;
-            padding: 20px;
+            margin-top: 15px;
+            padding: 10px;
             background-color: #f8fafc;
             border-radius: 6px;
             border-left: 4px solid #f59e0b;
         }
 
         .payment-terms h4 {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             color: #4b5563;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .payment-terms p {
-            font-size: 13px;
+            font-size: 12px;
             color: #374151;
-            line-height: 1.6;
+            line-height: 1.4;
         }
 
         /* Footer Notes */
         .footer-notes {
-            margin-top: 20px;
-            padding-top: 20px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px solid #f3f4f6;
             text-align: center;
         }
 
         .footer-notes p {
-            font-size: 12px;
+            font-size: 10px;
             color: #9ca3af;
         }
     </style>
@@ -393,7 +393,7 @@
                 <strong>Reference:</strong> {{ $invoice->invoice_number }}
             </p>
             @if(isset($paymentDetails['surcharge']))
-            <p style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+            <p style="margin-top: 5px; font-size: 10px; color: #6b7280;">
                 {{ $paymentDetails['surcharge'] }}
             </p>
             @endif
