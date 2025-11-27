@@ -1,2 +1,4 @@
 *
 !.gitignore
+!legacy_import_ods
+!legacy_import_ods/*
