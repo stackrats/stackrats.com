@@ -385,9 +385,8 @@
         </div>
 
         <!-- Payment Terms Notice -->
-        @if($invoice->invoiceStatus->name !== \App\Enums\InvoiceStatuses::PAID->value)
         <div class="payment-terms">
-            <h4>Payment Instructions</h4>
+            <h4>Payment instructions</h4>
             <p>
                 <strong>Due Date:</strong> {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}<br>
                 <strong>Reference:</strong> {{ $invoice->invoice_number }}
@@ -398,7 +397,6 @@
             </p>
             @endif
         </div>
-        @endif
 
         <!-- Footer Notes -->
         <div class="footer-notes">
