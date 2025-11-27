@@ -34,14 +34,16 @@ it('creates a new invoice from a recurring parent and updates the next date', fu
     expect($newInvoice)->toBeInstanceOf(Invoice::class)
         ->id->not->toBe($parentInvoice->id)
         ->amount->toEqual($parentInvoice->amount)
-        ->is_recurring->toBeFalse()
+        ->is_recurring->toBeTrue()
         ->invoice_number->not->toBe($parentInvoice->invoice_number)
         ->issue_date->format('Y-m-d')->toBe('2023-01-01') // Should be the scheduled date
-        ->due_date->format('Y-m-d')->toBe('2023-01-08'); // Should preserve the term gap (7 days)
+        ->due_date->format('Y-m-d')->toBe('2023-01-08') // Should preserve the term gap (7 days)
+        ->next_recurring_at->format('Y-m-d')->toBe('2023-02-01');
 
     // Check parent updated
     $parentInvoice->refresh();
-    expect($parentInvoice->next_recurring_at->format('Y-m-d'))->toBe('2023-02-01');
+    expect($parentInvoice->is_recurring)->toBeFalse();
+    expect($parentInvoice->next_recurring_at)->toBeNull();
 });
 
 it('handles weekly frequency', function () {
@@ -56,10 +58,14 @@ it('handles weekly frequency', function () {
     ]);
 
     $action = app(CreateRecurringInvoiceAction::class);
-    $action->execute($parentInvoice);
+    $newInvoice = $action->execute($parentInvoice);
 
     $parentInvoice->refresh();
-    expect($parentInvoice->next_recurring_at->format('Y-m-d'))->toBe('2023-01-08');
+    expect($parentInvoice->is_recurring)->toBeFalse();
+    expect($parentInvoice->next_recurring_at)->toBeNull();
+
+    expect($newInvoice->is_recurring)->toBeTrue();
+    expect($newInvoice->next_recurring_at->format('Y-m-d'))->toBe('2023-01-08');
 });
 
 it('creates invoice with issue date respecting user timezone', function () {
@@ -98,16 +104,7 @@ it('creates invoice with issue date respecting user timezone', function () {
     // Verify the next recurring date is also calculated correctly
     // The parent's next_recurring_at should be updated to next month
     // 2023-01-02 01:00:00 + 1 month = 2023-02-02 01:00:00 Auckland time
-    // Converted back to UTC: 2023-02-01 12:00:00 UTC
-    $parentInvoice->refresh();
-
-    // We check the date part of the next recurring at in the user's timezone
-    $nextRecurringLocal = $parentInvoice->next_recurring_at->setTimezone(Timezones::PACIFIC_AUCKLAND->value);
-    expect($nextRecurringLocal->format('Y-m-d'))->toBe('2023-02-02');
-
-    // Verify the database has the correct UTC value for next_recurring_at
-    $this->assertDatabaseHas('invoices', [
-        'id' => $parentInvoice->id,
-        'next_recurring_at' => '2023-02-01 12:00:00',
-    ]);
+    // Converted back to UTC, it depends on DST, but let's check the date part in Auckland time
+    $nextDateAuckland = $newInvoice->next_recurring_at->setTimezone(Timezones::PACIFIC_AUCKLAND->value);
+    expect($nextDateAuckland->format('Y-m-d'))->toBe('2023-02-02');
 });

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
+import { show as showInvoice } from '@/routes/invoices';
 import { type BreadcrumbItem } from '@/types';
-import { Head, usePage, router } from '@inertiajs/vue3';
+import { Head, usePage, router, Link } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useEcho } from '@laravel/echo-vue';
 import { Bar, Doughnut } from 'vue-chartjs';
 import {
@@ -252,6 +254,11 @@ const formatPercentage = (value: number) => {
                                 <div class="ml-auto font-medium">
                                     {{ formatCurrency(invoice.amount) }}
                                 </div>
+                                <Button variant="outline" size="sm" class="ml-4" as-child>
+                                    <Link :href="showInvoice(invoice.id).url">
+                                        View
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
                     </CardContent>

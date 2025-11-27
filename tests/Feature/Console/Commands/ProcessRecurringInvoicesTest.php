@@ -56,7 +56,13 @@ it('processes recurring invoices and pushes email job to queue', function () {
 
     // Assert parent invoice was updated
     $invoice->refresh();
-    expect($invoice->next_recurring_at->toDateString())->toBe(now()->addMonth()->toDateString());
+    expect($invoice->is_recurring)->toBeFalse();
+    expect($invoice->next_recurring_at)->toBeNull();
+
+    // Assert new invoice has recurring data
+    $newInvoice->refresh();
+    expect($newInvoice->is_recurring)->toBeTrue();
+    expect($newInvoice->next_recurring_at->toDateString())->toBe(now()->addMonth()->toDateString());
 });
 
 it('processes recurring invoices with custom date option', function () {
@@ -82,8 +88,14 @@ it('processes recurring invoices with custom date option', function () {
     Queue::assertPushed(SendInvoiceEmail::class);
 
     $invoice->refresh();
-    // Should be advanced by another month from the future date
-    expect($invoice->next_recurring_at->toDateString())->toBe($futureDate->copy()->addMonth()->toDateString());
+    // Parent should stop recurring
+    expect($invoice->is_recurring)->toBeFalse();
+    expect($invoice->next_recurring_at)->toBeNull();
+
+    // New invoice should be recurring
+    $newInvoice = Invoice::where('id', '!=', $invoice->id)->first();
+    expect($newInvoice->is_recurring)->toBeTrue();
+    expect($newInvoice->next_recurring_at->toDateString())->toBe($futureDate->copy()->addMonth()->toDateString());
 });
 
 it('does not process invoices not yet due', function () {

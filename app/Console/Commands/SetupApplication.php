@@ -48,7 +48,7 @@ class SetupApplication extends Command
         }
 
         $this->info('Updating specific invoice to be recurring...');
-        $invoice = Invoice::where('invoice_number', '392250707')->first();
+        $invoice = Invoice::where('invoice_number', '381251111')->first();
 
         if ($invoice) {
             $monthlyFrequency = RecurringFrequency::where('name', RecurringFrequencies::MONTHLY->value)->first();
@@ -59,7 +59,7 @@ class SetupApplication extends Command
                 'next_recurring_at' => '2025-12-02',
             ]);
 
-            $this->info('Updated invoice 392250707 to be recurring.');
+            $this->info('Updated invoice 381251111 to be recurring.');
         }
 
         $this->info('Application setup complete.');

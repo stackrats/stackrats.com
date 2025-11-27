@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use League\Csv\Reader;
+use Smalot\PdfParser\Parser;
 
 class ImportLegacyInvoices extends Command
 {
@@ -82,7 +83,7 @@ class ImportLegacyInvoices extends Command
 
         // If we have an invoice number from filename, we can try to scrape the rest from the CSV content
         if ($invoiceNumber) {
-            return $this->scrapeUnstructuredCsv($csv, $invoiceNumber, $user, $filename);
+            return $this->scrapeUnstructuredCsv($csv, $invoiceNumber, $user, $filename, $path);
         }
 
         // Fallback to standard column-based CSV import
@@ -127,7 +128,7 @@ class ImportLegacyInvoices extends Command
         return 0;
     }
 
-    protected function scrapeUnstructuredCsv(Reader $csv, string $number, User $user, string $filename): int
+    protected function scrapeUnstructuredCsv(Reader $csv, string $number, User $user, string $filename, string $csvPath): int
     {
         $records = iterator_to_array($csv->getRecords());
         $text = '';
@@ -181,10 +182,46 @@ class ImportLegacyInvoices extends Command
         // Check for poisoned date (2025-11-26) - likely export date
         $poisonedDate = \Carbon\Carbon::create(2025, 11, 26)->startOfDay();
         if ($date->startOfDay()->eq($poisonedDate)) {
-            $invoiceDate = $this->parseDateFromInvoiceNumber($number);
-            if ($invoiceDate) {
-                $this->info("Date {$date->format('Y-m-d')} looks like export date. Using date from invoice number: ".$invoiceDate->format('Y-m-d'));
-                $date = $invoiceDate;
+
+            // Try to find PDF
+            $pdfPath = str_replace('.csv', '.pdf', $csvPath);
+            if (File::exists($pdfPath)) {
+                $pdfDate = $this->parseDateFromPdf($pdfPath);
+                if ($pdfDate) {
+                    $this->info("Date {$date->format('Y-m-d')} looks like export date. Found correct date in PDF: ".$pdfDate->format('Y-m-d'));
+                    $date = $pdfDate;
+                } else {
+                    // Fallback to invoice number parsing if PDF parsing failed
+                    $invoiceDate = $this->parseDateFromInvoiceNumber($number);
+                    if ($invoiceDate) {
+                        $this->info("Date {$date->format('Y-m-d')} looks like export date. PDF parsing failed. Using date from invoice number: ".$invoiceDate->format('Y-m-d'));
+                        $date = $invoiceDate;
+                    }
+                }
+            } else {
+                // Fallback to ODS parsing if no PDF
+                $odsPath = str_replace('.csv', '.ods', $csvPath);
+                if (File::exists($odsPath)) {
+                    $odsDate = $this->parseDateFromOds($odsPath);
+                    if ($odsDate) {
+                        $this->info("Date {$date->format('Y-m-d')} looks like export date. Found correct date in ODS: ".$odsDate->format('Y-m-d'));
+                        $date = $odsDate;
+                    } else {
+                        // Fallback to invoice number parsing if ODS parsing failed
+                        $invoiceDate = $this->parseDateFromInvoiceNumber($number);
+                        if ($invoiceDate) {
+                            $this->info("Date {$date->format('Y-m-d')} looks like export date. ODS parsing failed. Using date from invoice number: ".$invoiceDate->format('Y-m-d'));
+                            $date = $invoiceDate;
+                        }
+                    }
+                } else {
+                    // Fallback to invoice number parsing if no PDF and no ODS
+                    $invoiceDate = $this->parseDateFromInvoiceNumber($number);
+                    if ($invoiceDate) {
+                        $this->info("Date {$date->format('Y-m-d')} looks like export date. No PDF or ODS found. Using date from invoice number: ".$invoiceDate->format('Y-m-d'));
+                        $date = $invoiceDate;
+                    }
+                }
             }
         }
 
@@ -310,6 +347,81 @@ class ImportLegacyInvoices extends Command
         return null;
     }
 
+    protected function parseDateFromOds(string $odsPath): ?\Carbon\Carbon
+    {
+        try {
+            $zip = new \ZipArchive;
+            if ($zip->open($odsPath) === true) {
+                $content = $zip->getFromName('content.xml');
+                $zip->close();
+
+                if ($content) {
+                    // Look for office:date-value="2025-11-06"
+                    if (preg_match('/office:date-value="(\d{4}-\d{2}-\d{2})"/', $content, $matches)) {
+                        return \Carbon\Carbon::parse($matches[1]);
+                    }
+
+                    // Fallback to text content
+                    if (preg_match('/>(\d{2}\/\d{2}\/\d{2})</', $content, $matches)) {
+                        try {
+                            return \Carbon\Carbon::createFromFormat('d/m/y', $matches[1]);
+                        } catch (\Exception $e) {
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    protected function parseDateFromPdf(string $pdfPath): ?\Carbon\Carbon
+    {
+        try {
+            $parser = new Parser;
+            $pdf = $parser->parseFile($pdfPath);
+            $text = $pdf->getText();
+
+            // Look for date patterns in the PDF text
+            if (preg_match('/Date issued\s*:?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i', $text, $matches) ||
+                preg_match('/Date\s*:?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i', $text, $matches)) {
+
+                $dateString = $matches[1];
+                $formats = ['d/m/Y', 'm/d/Y', 'd-m-Y', 'Y-m-d', 'd/m/y', 'm/d/y'];
+
+                foreach ($formats as $format) {
+                    try {
+                        $parsedDate = \Carbon\Carbon::createFromFormat($format, $dateString);
+                        $lastErrors = \DateTime::getLastErrors();
+
+                        if (is_array($lastErrors) && ($lastErrors['warning_count'] > 0 || $lastErrors['error_count'] > 0)) {
+                            continue;
+                        }
+
+                        // Sanity check year
+                        if ($parsedDate->year < 2000 || $parsedDate->year > 2030) {
+                            if ($parsedDate->year < 1000 && str_contains($format, 'Y')) {
+                                continue;
+                            }
+                        }
+
+                        return $parsedDate;
+                    } catch (\Exception $e) {
+                        continue;
+                    }
+                }
+            }
+
+            return null;
+
+        } catch (\Exception $e) {
+            // $this->error("Error parsing PDF $pdfPath: " . $e->getMessage());
+            return null;
+        }
+    }
+
     protected function parseDateFromInvoiceNumber(string $number): ?\Carbon\Carbon
     {
         // Expecting format XXXYYMMDD or similar where last 6 are YYMMDD
@@ -342,15 +454,19 @@ class ImportLegacyInvoices extends Command
     protected function createInvoice(string $number, User $user, string $description, string $email = 'legacy@example.com', float $amount = 0.0, $date = null, string $name = 'Legacy Import', array $lineItems = []): bool
     {
         $invoice = Invoice::where('invoice_number', $number)->first();
+        $issueDate = $date ?? now();
 
         if ($invoice) {
-            $invoice->update([
-                'issue_date' => $date ?? now(),
-                'due_date' => $date ?? now(),
+            $invoice->fill([
+                'issue_date' => $issueDate,
+                'due_date' => $issueDate,
                 'amount' => $amount,
                 'description' => $description,
                 'line_items' => $lineItems,
             ]);
+            $invoice->created_at = $issueDate;
+            $invoice->updated_at = $issueDate;
+            $invoice->save();
 
             return true;
         }
@@ -365,7 +481,7 @@ class ImportLegacyInvoices extends Command
 
         $paidStatus = InvoiceStatus::where('name', InvoiceStatuses::PAID->value)->first();
 
-        Invoice::create([
+        $invoice = new Invoice([
             'user_id' => $user->id,
             'contact_id' => $contact->id,
             'invoice_number' => $number,
@@ -373,12 +489,15 @@ class ImportLegacyInvoices extends Command
             'recipient_email' => $email,
             'amount' => $amount,
             'currency' => Currencies::NZD->value,
-            'issue_date' => $date ?? now(),
-            'due_date' => $date ?? now(),
+            'issue_date' => $issueDate,
+            'due_date' => $issueDate,
             'description' => $description,
             'line_items' => $lineItems,
             'invoice_status_id' => $paidStatus?->id,
         ]);
+        $invoice->created_at = $issueDate;
+        $invoice->updated_at = $issueDate;
+        $invoice->save();
 
         return true;
     }

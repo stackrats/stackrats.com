@@ -27,9 +27,6 @@ class CreateRecurringInvoiceAction
 
         // 2. Create new invoice
         $newInvoice = $parentInvoice->replicate([
-            'is_recurring',
-            'recurring_frequency_id',
-            'next_recurring_at',
             'invoice_number',
             'issue_date',
             'due_date',
@@ -38,7 +35,6 @@ class CreateRecurringInvoiceAction
             'last_sent_at',
         ]);
 
-        $newInvoice->is_recurring = false;
         $newInvoice->issue_date = $issueDate;
         $newInvoice->due_date = $dueDate;
 
@@ -52,25 +48,31 @@ class CreateRecurringInvoiceAction
             $newInvoice->invoice_status_id = $sentStatus->id;
         }
 
+        // Calculate next recurring date for the new invoice
+        $newInvoice->next_recurring_at = $this->calculateNextRecurringDate($parentInvoice);
+        $newInvoice->is_recurring = true;
+
         $newInvoice->save();
 
-        // 3. Update parent next recurring date
-        $this->updateParentNextDate($parentInvoice);
+        // 3. Update parent to stop recurring
+        $parentInvoice->update([
+            'is_recurring' => false,
+            'next_recurring_at' => null,
+        ]);
 
         return $newInvoice;
     }
 
-    protected function updateParentNextDate(Invoice $invoice): void
+    protected function calculateNextRecurringDate(Invoice $invoice): ?\Illuminate\Support\Carbon
     {
         $frequency = $invoice->recurringFrequency;
         if (! $frequency) {
-            return;
+            return null;
         }
 
         $timezone = $invoice->user->userSetting->timezone->value;
 
-        // We use copy() to avoid modifying the original instance in place before update if it was passed by ref (objects are)
-        // But here we want to update the DB.
+        // We use copy() to avoid modifying the original instance in place
         $currentDate = $invoice->next_recurring_at->copy()->setTimezone($timezone);
 
         $nextDate = match ($frequency->name) {
@@ -81,6 +83,6 @@ class CreateRecurringInvoiceAction
             default => $currentDate->addMonth(),
         };
 
-        $invoice->update(['next_recurring_at' => $nextDate->setTimezone(Timezones::UTC->value)]);
+        return $nextDate->setTimezone(Timezones::UTC->value);
     }
 }

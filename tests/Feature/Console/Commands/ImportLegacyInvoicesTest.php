@@ -23,6 +23,8 @@ it('imports legacy invoice with two digit year', function () {
 
     // 05/07/25 -> May 7th, 2025 (m/d/y)
     expect($invoice->issue_date->format('Y-m-d'))->toBe('2025-05-07');
+    expect($invoice->created_at->format('Y-m-d'))->toBe('2025-05-07');
+    expect($invoice->updated_at->format('Y-m-d'))->toBe('2025-05-07');
 
     File::deleteDirectory($path);
 });
@@ -44,6 +46,8 @@ it('imports legacy invoice with four digit year', function () {
     expect($invoice)->not->toBeNull();
 
     expect($invoice->issue_date->format('Y-m-d'))->toBe('2025-05-07');
+    expect($invoice->created_at->format('Y-m-d'))->toBe('2025-05-07');
+    expect($invoice->updated_at->format('Y-m-d'))->toBe('2025-05-07');
 
     File::deleteDirectory($path);
 });
