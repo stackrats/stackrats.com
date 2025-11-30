@@ -21,6 +21,7 @@ import {
 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { useEcho } from '@laravel/echo-vue';
+import Pagination from '@/components/Pagination.vue';
 
 interface LineItem {
     description: string;
@@ -63,8 +64,17 @@ interface Invoice {
     updated_at: string;
 }
 
+interface PaginatedInvoices {
+    data: Invoice[];
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
+}
+
 interface Props {
-    invoices: Invoice[];
+    invoices: PaginatedInvoices;
     filters?: {
         search?: string;
     };
@@ -201,30 +211,30 @@ const sendInvoice = (id: number) => {
 
             <!-- Invoices Grid -->
             <div
-                v-if="invoices.length > 0"
-                class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                v-if="invoices.data.length > 0"
+                class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
                 <Card
-                    v-for="invoice in invoices"
+                    v-for="invoice in invoices.data"
                     :key="invoice.id"
-                    class="hover:shadow-lg transition-shadow duration-200"
+                    class="hover:shadow-lg transition-all duration-200 group overflow-hidden border-muted/60"
                 >
                     <div class="p-6">
                         <!-- Header -->
                         <div class="flex items-start justify-between mb-4">
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
-                                    <FileText class="h-4 w-4 text-muted-foreground" />
-                                    <span class="font-mono text-sm font-medium">
+                                    <FileText class="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                    <span class="font-mono text-sm font-medium text-muted-foreground">
                                         {{ invoice.invoice_number }}
                                     </span>
                                 </div>
-                                <h3 class="font-semibold text-lg">
+                                <h3 class="font-semibold text-lg tracking-tight truncate max-w-[180px]" :title="invoice.recipient_name">
                                     {{ invoice.recipient_name }}
                                 </h3>
                             </div>
                             <div class="flex items-center gap-1">
-                                <Badge :class="getStatusColor(invoice.invoice_status.name)">
+                                <Badge :class="getStatusColor(invoice.invoice_status.name)" variant="secondary" class="capitalize">
                                    {{ invoice.invoice_status.label }}
                                 </Badge>
                                 <RotateCw
@@ -236,11 +246,11 @@ const sendInvoice = (id: number) => {
                         </div>
 
                         <!-- Amount -->
-                        <div class="mb-4">
-                            <p class="text-2xl font-bold">
+                        <div class="mb-4 pb-4 border-b border-dashed">
+                            <p class="text-3xl font-bold tracking-tight">
                                 {{ formatCurrency(invoice.amount, invoice.currency) }}
                             </p>
-                            <p class="text-sm text-muted-foreground">
+                            <p class="text-sm text-muted-foreground mt-1">
                                 Due {{ formatDate(invoice.due_date) }}
                             </p>
                         </div>
@@ -248,43 +258,48 @@ const sendInvoice = (id: number) => {
                         <!-- Description -->
                         <p
                             v-if="invoice.description"
-                            class="text-sm text-muted-foreground line-clamp-2 mb-4"
+                            class="text-sm text-muted-foreground line-clamp-2 h-10"
                         >
                             {{ invoice.description }}
                         </p>
+                        <div v-else class="h-10 mb-6"></div>
 
                         <!-- Actions -->
-                        <div class="flex flex-wrap gap-2 pt-4 border-t">
-                            <Link :href="`/invoices/${invoice.id}`">
-                                <Button variant="outline" size="sm">
-                                    <Eye class="h-4 w-4 mr-1" />
-                                    View
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex gap-1">
+                                <Link :href="`/invoices/${invoice.id}`">
+                                    <Button variant="ghost" size="icon" class="h-8 w-8" title="View">
+                                        <Eye class="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                                <Link :href="`/invoices/${invoice.id}/edit`">
+                                    <Button variant="ghost" size="icon" class="h-8 w-8" title="Edit">
+                                        <Edit class="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <Button
+                                    v-if="invoice.invoice_status.name !== InvoiceStatus.SENT && invoice.invoice_status.name !== InvoiceStatus.PAID"
+                                    variant="outline"
+                                    size="sm"
+                                    @click="sendInvoice(invoice.id)"
+                                    class="h-8"
+                                >
+                                    <Mail class="h-3.5 w-3.5 mr-1.5" />
+                                    Send
                                 </Button>
-                            </Link>
-                            <Link :href="`/invoices/${invoice.id}/edit`">
-                                <Button variant="outline" size="sm">
-                                    <Edit class="h-4 w-4 mr-1" />
-                                    Edit
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    @click="deleteInvoice(invoice.id)"
+                                    class="text-muted-foreground hover:text-red-600 h-8 w-8"
+                                    title="Delete"
+                                >
+                                    <Trash2 class="h-4 w-4" />
                                 </Button>
-                            </Link>
-                            <Button
-                                v-if="invoice.invoice_status.name !== InvoiceStatus.SENT && invoice.invoice_status.name !== InvoiceStatus.PAID"
-                                variant="outline"
-                                size="sm"
-                                @click="sendInvoice(invoice.id)"
-                            >
-                                <Mail class="h-4 w-4 mr-1" />
-                                Send
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                @click="deleteInvoice(invoice.id)"
-                                class="text-red-600 hover:text-red-700"
-                            >
-                                <Trash2 class="h-4 w-4 mr-1" />
-                                Delete
-                            </Button>
+                            </div>
                         </div>
                     </div>
                 </Card>
@@ -293,16 +308,16 @@ const sendInvoice = (id: number) => {
             <!-- Empty State -->
             <div
                 v-else
-                class="flex flex-col items-center justify-center py-12 text-center"
+                class="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-xl bg-muted/30"
             >
                 <div
-                    class="rounded-full bg-muted p-6 mb-4"
+                    class="rounded-full bg-background p-4 mb-4 shadow-sm"
                 >
-                    <FileText class="h-12 w-12 text-muted-foreground" />
+                    <FileText class="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 class="text-lg font-semibold mb-2">No invoices yet</h3>
-                <p class="text-sm text-muted-foreground mb-4">
-                    Create your first invoice to get started
+                <h3 class="text-lg font-semibold mb-1">No invoices found</h3>
+                <p class="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+                    Get started by creating your first invoice or try adjusting your search.
                 </p>
                 <Link href="/invoices/create">
                     <Button>
@@ -310,6 +325,11 @@ const sendInvoice = (id: number) => {
                         Create Invoice
                     </Button>
                 </Link>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="invoices.data.length > 0" class="mt-8">
+                <Pagination :links="invoices.links" />
             </div>
         </div>
     </AppLayout>

@@ -37,7 +37,7 @@ it('processes recurring invoices and pushes email job to queue', function () {
     $invoice = Invoice::factory()->create([
         'is_recurring' => true,
         'recurring_frequency_id' => $monthly->id,
-        'next_recurring_at' => now(),
+        'next_recurring_at' => now()->startOfDay(),
         'invoice_number' => 'INV-TEST-001',
         'invoice_status_id' => $sentStatus->id,
     ]);
@@ -62,7 +62,7 @@ it('processes recurring invoices and pushes email job to queue', function () {
     // Assert new invoice has recurring data
     $newInvoice->refresh();
     expect($newInvoice->is_recurring)->toBeTrue();
-    expect($newInvoice->next_recurring_at->toDateString())->toBe(now()->addMonth()->toDateString());
+    expect($newInvoice->next_recurring_at->toDateString())->toBe(now()->startOfDay()->addMonth()->toDateString());
 });
 
 it('processes recurring invoices with custom date option', function () {

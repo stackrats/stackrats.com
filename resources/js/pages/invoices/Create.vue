@@ -157,7 +157,7 @@ const submit = () => {
     <Head title="Create Invoice" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-4 lg:p-6">
+        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 lg:p-6">
             <div class="flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-end">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">Create Invoice</h1>
@@ -197,7 +197,7 @@ const submit = () => {
 
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- Recipient + Invoice meta side-by-side on large screens -->
-                <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)]">
+                <div class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)]">
                     <!-- Recipient Information -->
                     <Card>
                         <div class="p-6 space-y-5">
@@ -340,7 +340,7 @@ const submit = () => {
                 </div>
 
                 <!-- Line items + recurring and totals -->
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)]">
+                <div class="grid gap-4 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)]">
                     <!-- Line Items -->
                     <Card>
                         <div class="p-6 space-y-4">
@@ -359,7 +359,7 @@ const submit = () => {
                                 </Button>
                             </div>
 
-                            <div class="hidden rounded-md bg-muted/40 px-4 py-2 text-xs text-muted-foreground md:grid md:grid-cols-[2fr_0.5fr_0.8fr_1fr_1fr_auto] md:gap-4">
+                            <div class="hidden rounded-md bg-muted/40 px-4 py-2 text-xs text-muted-foreground md:grid md:grid-cols-[2fr_0.5fr_0.8fr_1fr_1fr_3rem] md:gap-4">
                                 <span>Description</span>
                                 <span>Qty</span>
                                 <span>Unit</span>
@@ -371,7 +371,7 @@ const submit = () => {
                                 <div
                                     v-for="(item, index) in lineItems"
                                     :key="index"
-                                    class="rounded-md border bg-background/40 p-3 md:grid md:grid-cols-[2fr_0.5fr_0.8fr_1fr_1fr_auto] md:items-start md:gap-4"
+                                    class="rounded-md border bg-background/40 px-4 py-3 md:grid md:grid-cols-[2fr_0.5fr_0.8fr_1fr_1fr_3rem] md:items-center md:gap-4"
                                 >
                                     <div class="space-y-1 md:space-y-2">
                                         <Label :for="`item_desc_${index}`" class="md:sr-only">Description</Label>

@@ -189,7 +189,7 @@ onMounted(() => {
     <Head title="Edit invoice" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-4 lg:p-6">
+        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 lg:p-6">
             <div class="flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-end">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">Edit invoice</h1>
@@ -229,7 +229,7 @@ onMounted(() => {
 
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- Recipient + Invoice meta side-by-side on large screens -->
-                <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)]">
+                <div class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)]">
                     <!-- Recipient Information -->
                     <Card>
                         <div class="p-6 space-y-5">
@@ -402,7 +402,7 @@ onMounted(() => {
                 </div>
 
                 <!-- Line items + recurring and totals -->
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)]">
+                <div class="grid gap-4 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)]">
                     <!-- Line Items -->
                     <Card>
                         <div class="p-6 space-y-4">
