@@ -142,7 +142,7 @@ class DashboardController extends Controller
                     'id' => $invoice->id,
                     'recipient_name' => $invoice->recipient_name,
                     'amount' => $invoice->amount, // Model casts this to float (dollars)
-                    'next_recurring_date' => $invoice->next_recurring_at->setTimezone($userTimezone)->format('d-m-Y'),
+                    'next_recurring_date' => $invoice->next_recurring_at->setTimezone($userTimezone)->format('d-m-Y H:i'),
                     'frequency' => $invoice->recurringFrequency?->label,
                 ];
             });

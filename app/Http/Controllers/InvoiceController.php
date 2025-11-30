@@ -35,13 +35,14 @@ class InvoiceController extends Controller
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('invoice_number', 'like', "%{$search}%")
-                        ->orWhere('recipient_name', 'like', "%{$search}%");
+                        ->orWhere('recipient_name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
                 });
             })
             ->with(['invoiceStatus', 'recurringFrequency'])
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($invoice) {
+            ->paginate(9)
+            ->through(function ($invoice) {
                 if ($invoice->next_recurring_at) {
                     $invoice->next_recurring_date = $this->parseUtcDateTimeAsLocal($invoice->next_recurring_at, $invoice->user, 'Y-m-d H:i:s');
                 }
