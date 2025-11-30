@@ -388,7 +388,7 @@
         <div class="payment-terms">
             <h4>Payment instructions</h4>
             <p>
-                <strong>Due Date:</strong> {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}<br>
+                <strong>Due date:</strong> {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}<br>
                 <strong>Reference:</strong> {{ $invoice->invoice_number }}
             </p>
             @if(isset($paymentDetails['surcharge']))

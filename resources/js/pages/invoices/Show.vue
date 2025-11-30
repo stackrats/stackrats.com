@@ -339,11 +339,11 @@ const calculateLineTotal = (item: LineItem) => {
                             </h3>
                             <div class="space-y-2">
                                 <div>
-                                    <span class="text-sm text-muted-foreground">Issue Date:</span>
+                                    <span class="text-sm text-muted-foreground">Issue date:</span>
                                     <span class="ml-2 font-medium">{{ formatDate(invoice.issue_date) }}</span>
                                 </div>
                                 <div>
-                                    <span class="text-sm text-muted-foreground">Due Date:</span>
+                                    <span class="text-sm text-muted-foreground">Due date:</span>
                                     <span class="ml-2 font-medium">{{ formatDate(invoice.due_date) }}</span>
                                 </div>
                                 <div v-if="invoice.is_recurring && invoice.recurring_frequency">
@@ -351,7 +351,7 @@ const calculateLineTotal = (item: LineItem) => {
                                     <span class="ml-2 font-medium capitalize">{{ invoice.recurring_frequency.label }}</span>
                                 </div>
                                 <div v-if="invoice.next_recurring_date">
-                                    <span class="text-sm text-muted-foreground">Next Invoice:</span>
+                                    <span class="text-sm text-muted-foreground">Next invoice:</span>
                                     <span class="ml-2 font-medium">{{ formatDate(invoice.next_recurring_date) }}</span>
                                 </div>
                             </div>
@@ -377,7 +377,7 @@ const calculateLineTotal = (item: LineItem) => {
                                     <tr>
                                         <th class="text-left p-3 text-sm font-semibold">Description</th>
                                         <th class="text-right p-3 text-sm font-semibold">{{ quantityHeader }}</th>
-                                        <th class="text-right p-3 text-sm font-semibold">Unit Price</th>
+                                        <th class="text-right p-3 text-sm font-semibold">Unit price</th>
                                         <th class="text-right p-3 text-sm font-semibold">Total</th>
                                     </tr>
                                 </thead>
@@ -402,7 +402,7 @@ const calculateLineTotal = (item: LineItem) => {
                     <!-- Total -->
                     <div class="flex justify-end pt-4 border-t-2">
                         <div class="text-right">
-                            <p class="text-sm text-muted-foreground mb-2">Total Amount</p>
+                            <p class="text-sm text-muted-foreground mb-2">Total amount</p>
                             <p class="text-3xl font-bold">{{ formatCurrency(invoice.amount, invoice.currency) }}</p>
                         </div>
                     </div>
