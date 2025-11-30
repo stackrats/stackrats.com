@@ -8,14 +8,19 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #1f2937;
-            max-width: 600px;
-            margin: 0 auto;
+            margin: 0;
             padding: 0;
             background-color: #f9fafb;
         }
+        .email-wrapper {
+            width: 100%;
+            background-color: #f9fafb;
+            padding: 20px 0;
+        }
         .email-container {
             background: #ffffff;
-            margin: 20px;
+            margin: 0 auto;
+            max-width: 600px;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -24,9 +29,9 @@
             background: #ffffff;
             padding: 30px 30px 20px;
             border-bottom: 2px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        }
+        .header-table {
+            width: 100%;
         }
         .logo {
             height: 35px;
@@ -37,6 +42,7 @@
             font-weight: 300;
             color: #6b7280;
             text-align: right;
+            white-space: nowrap;
         }
         .content {
             background: #fff;
@@ -113,13 +119,22 @@
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="header">
-            <img src="{{ $logoUrl }}" alt="{{ config('app.name') }}" class="logo">
-            <div class="invoice-number">#{{ $invoice->invoice_number }}</div>
-        </div>
-        
-        <div class="content">
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="header">
+                <table class="header-table" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="vertical-align: middle;">
+                            <img src="{{ $logoUrl }}" alt="{{ config('app.name') }}" class="logo">
+                        </td>
+                        <td style="vertical-align: middle; text-align: right;">
+                            <div class="invoice-number">#{{ $invoice->invoice_number }}</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="content">
             <p class="greeting">Dear {{ $invoice->recipient_name }},</p>
             
             <p class="message">{{ $emailBody }}</p>
@@ -154,6 +169,7 @@
             <p class="message">If you have any questions about this invoice, please contact {{ config('mail.from.address') }}.</p>
             
             <p class="message">Thank you!</p>
+            </div>
         </div>
     </div>
 </body>
