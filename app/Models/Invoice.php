@@ -34,6 +34,7 @@ class Invoice extends Model
         'recurring_completed_at',
         'parent_invoice_id',
         'last_sent_at',
+        'paid_at',
     ];
 
     protected $casts = [
@@ -46,6 +47,7 @@ class Invoice extends Model
         'recurring_completed_at' => 'datetime',
         'last_sent_at' => 'datetime',
         'is_recurring' => 'boolean',
+        'paid_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

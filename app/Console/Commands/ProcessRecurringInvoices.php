@@ -18,7 +18,7 @@ class ProcessRecurringInvoices extends Command
      *
      * @var string
      */
-    protected $signature = 'invoices:process-recurring {--date= : The date to simulate processing for (YYYY-MM-DD)}';
+    protected $signature = 'app:process-recurring-invoices {--date= : The date to simulate processing for (YYYY-MM-DD)}';
 
     /**
      * The console command description.

@@ -91,6 +91,11 @@ Route::get('test-invoice-email', function () {
     ]);
 });
 
+// Wise Webhook (no CSRF, no auth)
+Route::post('webhooks/wise', [\App\Http\Controllers\Api\WiseWebhookController::class, 'handle'])
+    ->name('webhooks.wise')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);
     Route::patch('invoices/{invoice}/status', [\App\Http\Controllers\InvoiceController::class, 'updateStatus'])->name('invoices.status');

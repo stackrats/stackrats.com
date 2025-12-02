@@ -14,17 +14,7 @@ return new class extends Migration
         Schema::table('invoices', function (Blueprint $table) {
             $table->timestamp('recurring_completed_at')->nullable()->after('next_recurring_at');
             $table->foreignUuid('parent_invoice_id')->nullable()->after('recurring_completed_at')->constrained('invoices')->nullOnDelete();
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropForeign(['parent_invoice_id']);
-            $table->dropColumn(['recurring_completed_at', 'parent_invoice_id']);
+            $table->timestamp('paid_at')->nullable();
         });
     }
 };
