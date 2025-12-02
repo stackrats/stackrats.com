@@ -114,6 +114,16 @@ const formatPercentage = (value: number) => {
         maximumFractionDigits: 1,
     }).format(value);
 };
+
+const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+};
 </script>
 
 <template>
@@ -212,7 +222,7 @@ const formatPercentage = (value: number) => {
                                 <div class="ml-4 space-y-1">
                                     <p class="text-sm font-medium leading-none">{{ invoice.recipient_name }}</p>
                                     <p class="text-sm text-muted-foreground">
-                                        {{ invoice.frequency }} - Next: {{ invoice.next_recurring_date }}
+                                        {{ invoice.frequency }} - Next: {{ formatDateTime(invoice.next_recurring_date) }}
                                     </p>
                                 </div>
                                 <div class="ml-auto font-medium">
