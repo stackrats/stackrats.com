@@ -129,8 +129,9 @@ class DashboardController extends Controller
 
         $recurringInvoices = Invoice::where('user_id', $user->id)
             ->where('is_recurring', true)
+            ->whereNull('recurring_completed_at')
             ->whereHas('invoiceStatus', function ($query) {
-                $query->where('name', '!=', InvoiceStatuses::CANCELLED->value);
+                $query->where('name', InvoiceStatuses::PENDING->value);
             })
             ->whereNotNull('next_recurring_at')
             ->with(['recurringFrequency'])

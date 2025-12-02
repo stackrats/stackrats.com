@@ -12,20 +12,22 @@ class CreateRecurringInvoiceAction
 {
     public function execute(Invoice $parentInvoice): Invoice
     {
-        // 1. Calculate new dates
         $timezone = $parentInvoice->user->userSetting->timezone->value;
-        $issueDate = $parentInvoice->next_recurring_at->setTimezone($timezone);
 
         // Calculate terms (diff between original issue and due)
-        // If dates are null, default to 0 days or some standard
         $termsDays = 0;
         if ($parentInvoice->issue_date && $parentInvoice->due_date) {
             $termsDays = $parentInvoice->issue_date->diffInDays($parentInvoice->due_date);
         }
 
+        // Calculate the next recurring date first - this will be when the NEW invoice is due to be sent
+        $nextRecurringAt = $this->calculateNextRecurringDate($parentInvoice);
+
+        // The new invoice's issue date is based on its next_recurring_at (when it will be sent)
+        $issueDate = $nextRecurringAt->copy()->setTimezone($timezone);
         $dueDate = $issueDate->copy()->addDays($termsDays);
 
-        // 2. Create new invoice
+        // Create new invoice
         $newInvoice = $parentInvoice->replicate([
             'invoice_number',
             'issue_date',
@@ -33,31 +35,29 @@ class CreateRecurringInvoiceAction
             'created_at',
             'updated_at',
             'last_sent_at',
+            'recurring_completed_at',
+            'parent_invoice_id',
         ]);
 
         $newInvoice->issue_date = $issueDate;
         $newInvoice->due_date = $dueDate;
-
-        // We need to save it to get an ID? No, generateInvoiceNumber doesn't need ID.
-        // But generateInvoiceNumber queries DB.
         $newInvoice->invoice_number = $newInvoice->generateInvoiceNumber();
 
-        // Set status to SENT
-        $sentStatus = InvoiceStatus::where('name', InvoiceStatuses::SENT->value)->first();
-        if ($sentStatus) {
-            $newInvoice->invoice_status_id = $sentStatus->id;
+        // Set new invoice to PENDING - it will be sent when its next_recurring_at date comes
+        $pendingStatus = InvoiceStatus::where('name', InvoiceStatuses::PENDING->value)->first();
+        if ($pendingStatus) {
+            $newInvoice->invoice_status_id = $pendingStatus->id;
         }
 
-        // Calculate next recurring date for the new invoice
-        $newInvoice->next_recurring_at = $this->calculateNextRecurringDate($parentInvoice);
+        $newInvoice->next_recurring_at = $nextRecurringAt;
         $newInvoice->is_recurring = true;
+        $newInvoice->parent_invoice_id = $parentInvoice->id;
 
         $newInvoice->save();
 
-        // 3. Update parent to stop recurring
+        // 3. Mark parent as completed (status will be updated by SendInvoiceEmail job on success)
         $parentInvoice->update([
-            'is_recurring' => false,
-            'next_recurring_at' => null,
+            'recurring_completed_at' => now(),
         ]);
 
         return $newInvoice;

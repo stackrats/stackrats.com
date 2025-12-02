@@ -241,9 +241,21 @@ class InvoiceController extends Controller
     {
         $this->authorize('update', $invoice);
 
-        $invoice->update([
-            'invoice_status_id' => $request->validated()['invoice_status_id'],
-        ]);
+        $newStatusId = $request->validated()['invoice_status_id'];
+        $newStatus = InvoiceStatus::find($newStatusId);
+
+        $updateData = [
+            'invoice_status_id' => $newStatusId,
+        ];
+
+        // Set paid_at when status changes to paid, clear it otherwise
+        if ($newStatus && $newStatus->name === InvoiceStatuses::PAID->value) {
+            $updateData['paid_at'] = now();
+        } else {
+            $updateData['paid_at'] = null;
+        }
+
+        $invoice->update($updateData);
 
         return back()->with('success', 'Invoice status updated successfully.');
     }

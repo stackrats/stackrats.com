@@ -59,6 +59,7 @@ interface Invoice {
     is_recurring: boolean;
     recurring_frequency?: RecurringFrequencyModel;
     next_recurring_date?: string;
+    recurring_completed_at?: string;
     last_sent_at?: string;
     created_at: string;
     updated_at: string;
@@ -101,6 +102,10 @@ watch(search, (value) => {
 
 useEcho(`App.Models.User.${user.id}`, 'InvoiceCreated', () => {
     router.reload();
+});
+
+useEcho(`App.Models.User.${user.id}`, 'InvoiceEmailSent', () => {
+    router.reload({ only: ['invoices'] });
 });
 
 const showSuccess = ref(false);
@@ -157,7 +162,12 @@ const deleteInvoice = (id: number) => {
 
 const sendInvoice = (id: number) => {
     if (confirm('Are you sure you want to send this invoice?')) {
-        router.post(`/invoices/${id}/send`);
+        router.post(`/invoices/${id}/send`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                router.reload({ only: ['invoices'] });
+            }
+        });
     }
 };
 </script>
@@ -253,6 +263,10 @@ const sendInvoice = (id: number) => {
                             <p class="text-sm text-muted-foreground mt-1">
                                 Due {{ formatDate(invoice.due_date) }}
                             </p>
+                            <p v-if="invoice.is_recurring && invoice.next_recurring_date && !invoice.recurring_completed_at" class="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                                <RotateCw class="h-3 w-3" />
+                                Next: {{ invoice.next_recurring_date }}
+                            </p>
                         </div>
 
                         <!-- Description -->
@@ -268,13 +282,15 @@ const sendInvoice = (id: number) => {
                         <div class="flex items-center justify-between gap-2">
                             <div class="flex gap-1">
                                 <Link :href="`/invoices/${invoice.id}`">
-                                    <Button variant="ghost" size="icon" class="h-8 w-8" title="View">
-                                        <Eye class="h-4 w-4" />
+                                    <Button variant="outline" size="sm" class="h-8">
+                                        <Eye class="h-4 w-4 mr-1.5" />
+                                        View
                                     </Button>
                                 </Link>
                                 <Link :href="`/invoices/${invoice.id}/edit`">
-                                    <Button variant="ghost" size="icon" class="h-8 w-8" title="Edit">
-                                        <Edit class="h-4 w-4" />
+                                    <Button variant="outline" size="sm" class="h-8">
+                                        <Edit class="h-4 w-4 mr-1.5" />
+                                        Edit
                                     </Button>
                                 </Link>
                             </div>

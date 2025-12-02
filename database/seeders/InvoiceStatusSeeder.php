@@ -15,10 +15,11 @@ class InvoiceStatusSeeder extends Seeder
     {
         $statuses = [
             ['name' => InvoiceStatuses::DRAFT->value, 'sort_order' => 1],
-            ['name' => InvoiceStatuses::SENT->value, 'sort_order' => 2],
-            ['name' => InvoiceStatuses::PAID->value, 'sort_order' => 3],
-            ['name' => InvoiceStatuses::OVERDUE->value, 'sort_order' => 4],
-            ['name' => InvoiceStatuses::CANCELLED->value, 'sort_order' => 5],
+            ['name' => InvoiceStatuses::PENDING->value, 'sort_order' => 2],
+            ['name' => InvoiceStatuses::SENT->value, 'sort_order' => 3],
+            ['name' => InvoiceStatuses::PAID->value, 'sort_order' => 4],
+            ['name' => InvoiceStatuses::OVERDUE->value, 'sort_order' => 5],
+            ['name' => InvoiceStatuses::CANCELLED->value, 'sort_order' => 6],
         ];
 
         foreach ($statuses as $status) {

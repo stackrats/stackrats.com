@@ -34,7 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->runInBackground();
-
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
