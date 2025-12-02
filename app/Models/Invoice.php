@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
@@ -30,6 +31,8 @@ class Invoice extends Model
         'is_recurring',
         'recurring_frequency_id',
         'next_recurring_at',
+        'recurring_completed_at',
+        'parent_invoice_id',
         'last_sent_at',
     ];
 
@@ -40,6 +43,7 @@ class Invoice extends Model
         'issue_date' => 'date',
         'due_date' => 'date',
         'next_recurring_at' => 'datetime',
+        'recurring_completed_at' => 'datetime',
         'last_sent_at' => 'datetime',
         'is_recurring' => 'boolean',
     ];
@@ -62,6 +66,16 @@ class Invoice extends Model
     public function recurringFrequency(): BelongsTo
     {
         return $this->belongsTo(RecurringFrequency::class);
+    }
+
+    public function parentInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'parent_invoice_id');
+    }
+
+    public function childInvoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'parent_invoice_id');
     }
 
     public function generateInvoiceNumber(): string

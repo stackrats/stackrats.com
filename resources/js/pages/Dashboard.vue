@@ -261,37 +261,6 @@ const formatPercentage = (value: number) => {
                     </CardContent>
                 </Card>
             </div>
-<!-- 
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card class="col-span-12">
-                    <CardHeader>
-                        <CardTitle>Upcoming recurring invoices</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="space-y-8">
-                            <div v-if="recurring_invoices.length === 0" class="text-sm text-muted-foreground">
-                                No upcoming recurring invoices.
-                            </div>
-                            <div v-for="invoice in recurring_invoices" :key="invoice.id" class="flex items-center">
-                                <div class="ml-4 space-y-1">
-                                    <p class="text-sm font-medium leading-none">{{ invoice.recipient_name }}</p>
-                                    <p class="text-sm text-muted-foreground">
-                                        {{ invoice.frequency }} - Next: {{ invoice.next_recurring_date }}
-                                    </p>
-                                </div>
-                                <div class="ml-auto font-medium">
-                                    {{ formatCurrency(invoice.amount) }}
-                                </div>
-                                <Button variant="outline" size="sm" class="ml-4" as-child>
-                                    <Link :href="showInvoice(invoice.id).url">
-                                        View
-                                    </Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div> -->
         </div>
     </AppLayout>
 </template>

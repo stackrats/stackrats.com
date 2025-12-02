@@ -50,6 +50,7 @@ class InvoiceEmailSent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
+            new PrivateChannel('App.Models.User.'.$this->invoice->user_id),
             new PrivateChannel('invoices.'.$this->invoice->id),
         ];
     }

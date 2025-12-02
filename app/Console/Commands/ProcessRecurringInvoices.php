@@ -9,6 +9,7 @@ use App\Jobs\SendInvoiceEmail;
 use App\Models\Invoice;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ProcessRecurringInvoices extends Command
 {
@@ -38,8 +39,9 @@ class ProcessRecurringInvoices extends Command
         $invoices = Invoice::where('is_recurring', true)
             ->where('next_recurring_at', '<=', $date)
             ->whereNotNull('next_recurring_at')
+            ->whereNull('recurring_completed_at')
             ->whereHas('invoiceStatus', function ($query) {
-                $query->where('name', '!=', InvoiceStatuses::DRAFT->value);
+                $query->where('name', InvoiceStatuses::PENDING->value);
             })
             ->get();
 
@@ -54,17 +56,20 @@ class ProcessRecurringInvoices extends Command
             $this->line("Processing recurring invoice for {$invoice->invoice_number}...");
 
             try {
-                $newInvoice = $createRecurringInvoice->execute($invoice);
+                DB::transaction(function () use ($invoice, $createRecurringInvoice, &$count) {
+                    // Create the next recurring invoice first (this marks parent as completed)
+                    $newInvoice = $createRecurringInvoice->execute($invoice);
+                    $this->info("Created next recurring invoice {$newInvoice->invoice_number}.");
 
-                $this->info("Created new invoice {$newInvoice->invoice_number}.");
+                    // Then dispatch email for the current invoice
+                    SendInvoiceEmail::dispatch($invoice);
+                    $this->info("Dispatched email for {$invoice->invoice_number}.");
 
-                SendInvoiceEmail::dispatch($newInvoice);
-                $this->info("Dispatched email for {$newInvoice->invoice_number}.");
+                    InvoiceCreated::dispatch($newInvoice);
+                    $this->info("Dispatched InvoiceCreated event for {$newInvoice->invoice_number}.");
 
-                InvoiceCreated::dispatch($newInvoice);
-                $this->info("Dispatched InvoiceCreated event for {$newInvoice->invoice_number}.");
-
-                $count++;
+                    $count++;
+                });
             } catch (\Exception $e) {
                 $this->error("Failed to process invoice {$invoice->invoice_number}: ".$e->getMessage());
             }
