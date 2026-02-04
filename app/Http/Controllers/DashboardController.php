@@ -63,10 +63,10 @@ class DashboardController extends Controller
             })
             ->sum('amount');
 
-        // MRR - only include root recurring invoices (no parent) that are pending/sent/overdue
+        // MRR - only include active recurring invoices (not completed) that are pending/sent/overdue
         $recurringInvoicesAll = Invoice::where('user_id', $user->id)
             ->where('is_recurring', true)
-            ->whereNull('parent_invoice_id')
+            ->whereNull('recurring_completed_at')
             ->whereHas('invoiceStatus', function ($query) {
                 $query->whereIn('name', [
                     InvoiceStatuses::PENDING->value,
