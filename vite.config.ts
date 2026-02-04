@@ -24,4 +24,8 @@ export default defineConfig({
             },
         }),
     ],
+
+    optimizeDeps: {
+        exclude: ['lottie-web'], // keep it out of prebundle
+    },
 });
