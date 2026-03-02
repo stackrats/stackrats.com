@@ -26,6 +26,6 @@ export default defineConfig({
     ],
 
     optimizeDeps: {
-        exclude: ['lottie-web'], // keep it out of prebundle
+        include: ['lottie-web'], // force prebundle to handle ESM exports
     },
 });
