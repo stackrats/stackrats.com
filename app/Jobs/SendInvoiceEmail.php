@@ -31,6 +31,8 @@ class SendInvoiceEmail implements ShouldQueue
     public function handle(GenerateInvoicePdfBinaryAction $generatePdf): void
     {
         try {
+            $this->invoice->load('attachments');
+
             // Generate PDF binary
             $pdfBinary = $generatePdf->handle($this->invoice);
 

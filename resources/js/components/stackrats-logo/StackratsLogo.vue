@@ -1,4 +1,4 @@
-<script setup>
+<script lang="ts" setup>
 import StackratsLogoIcon from "./StackratsLogoIcon.vue";
 import StackratsLogoType from "./StackratsLogoType.vue";
 </script>

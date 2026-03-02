@@ -59,13 +59,19 @@ class InvoiceMail extends Mailable
      */
     public function attachments(): array
     {
+        $attachments = [];
+
         if ($this->pdfBinary) {
-            return [
-                Attachment::fromData(fn () => $this->pdfBinary, "invoice-{$this->invoice->invoice_number}.pdf")
-                    ->withMime('application/pdf'),
-            ];
+            $attachments[] = Attachment::fromData(fn () => $this->pdfBinary, "invoice-{$this->invoice->invoice_number}.pdf")
+                ->withMime('application/pdf');
         }
 
-        return [];
+        foreach ($this->invoice->attachments as $fileAttachment) {
+            $attachments[] = Attachment::fromStorageDisk('local', $fileAttachment->stored_path)
+                ->as($fileAttachment->original_name)
+                ->withMime($fileAttachment->mime_type);
+        }
+
+        return $attachments;
     }
 }

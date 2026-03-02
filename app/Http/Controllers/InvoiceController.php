@@ -8,6 +8,7 @@ use App\Enums\InvoiceUnitTypes;
 use App\Enums\Timezones;
 use App\Models\Contact;
 use App\Models\Invoice;
+use App\Models\InvoiceAttachment;
 use App\Models\InvoiceStatus;
 use App\Models\RecurringFrequency;
 use App\Shared\Traits\FormatDateTime;
@@ -95,6 +96,8 @@ class InvoiceController extends Controller
             'is_recurring' => 'boolean',
             'recurring_frequency_id' => 'nullable|exists:recurring_frequencies,id',
             'next_recurring_date' => 'nullable|date|after_or_equal:issue_date',
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,jpg,jpeg,png,gif,txt,zip',
         ]);
 
         $draftStatus = InvoiceStatus::where('name', InvoiceStatuses::DRAFT->value)->first();
@@ -121,6 +124,20 @@ class InvoiceController extends Controller
 
         $invoice->save();
 
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store("invoices/{$invoice->id}/attachments", 'local');
+
+                InvoiceAttachment::create([
+                    'invoice_id' => $invoice->id,
+                    'original_name' => $file->getClientOriginalName(),
+                    'stored_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+            }
+        }
+
         return redirect()->route('invoices.index')
             ->with('success', 'Invoice created successfully.');
     }
@@ -132,7 +149,7 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', $invoice);
 
-        $invoice->load(['invoiceStatus', 'recurringFrequency']);
+        $invoice->load(['invoiceStatus', 'recurringFrequency', 'attachments']);
 
         if ($invoice->next_recurring_at) {
             $invoice->next_recurring_date = $this->parseUtcDateTimeAsLocal($invoice->next_recurring_at, $invoice->user, 'Y-m-d H:i:s');
@@ -156,7 +173,7 @@ class InvoiceController extends Controller
     {
         $this->authorize('update', $invoice);
 
-        $invoice->load(['invoiceStatus', 'recurringFrequency']);
+        $invoice->load(['invoiceStatus', 'recurringFrequency', 'attachments']);
 
         if ($invoice->next_recurring_at) {
             $invoice->next_recurring_date = $this->parseUtcDateTimeAsLocal($invoice->next_recurring_at, $invoice->user, 'Y-m-d H:i:s');
@@ -199,6 +216,10 @@ class InvoiceController extends Controller
             'is_recurring' => 'boolean',
             'recurring_frequency_id' => 'nullable|exists:recurring_frequencies,id',
             'next_recurring_date' => 'nullable|date|after_or_equal:issue_date',
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,csv,jpg,jpeg,png,gif,txt,zip',
+            'remove_attachments' => 'nullable|array',
+            'remove_attachments.*' => 'string|exists:invoice_attachments,id',
         ]);
 
         if (isset($validated['next_recurring_date'])) {
@@ -206,7 +227,34 @@ class InvoiceController extends Controller
             unset($validated['next_recurring_date']);
         }
 
+        unset($validated['attachments'], $validated['remove_attachments']);
+
         $invoice->update($validated);
+
+        if ($request->has('remove_attachments')) {
+            $attachmentsToRemove = InvoiceAttachment::whereIn('id', $request->input('remove_attachments'))
+                ->where('invoice_id', $invoice->id)
+                ->get();
+
+            foreach ($attachmentsToRemove as $attachment) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($attachment->stored_path);
+                $attachment->delete();
+            }
+        }
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store("invoices/{$invoice->id}/attachments", 'local');
+
+                InvoiceAttachment::create([
+                    'invoice_id' => $invoice->id,
+                    'original_name' => $file->getClientOriginalName(),
+                    'stored_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+            }
+        }
 
         if ($invoice->is_recurring && $invoice->recurring_frequency_id && empty($invoice->next_recurring_at)) {
             $frequency = RecurringFrequency::find($invoice->recurring_frequency_id);
@@ -258,6 +306,21 @@ class InvoiceController extends Controller
         $invoice->update($updateData);
 
         return back()->with('success', 'Invoice status updated successfully.');
+    }
+
+    /**
+     * Download an invoice attachment
+     */
+    public function downloadAttachment(Invoice $invoice, InvoiceAttachment $attachment): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->authorize('view', $invoice);
+
+        abort_unless($attachment->invoice_id === $invoice->id, 404);
+
+        return \Illuminate\Support\Facades\Storage::disk('local')->download(
+            $attachment->stored_path,
+            $attachment->original_name
+        );
     }
 
     /**

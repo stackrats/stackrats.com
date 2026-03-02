@@ -11,7 +11,7 @@ import InputError from '@/components/InputError.vue';
 import { type BreadcrumbItem } from '@/types';
 import { type RecurringFrequencyType, type InvoiceStatusType } from '@/types/enums';
 import { Head, useForm } from '@inertiajs/vue3';
-import { Plus, Trash2 } from 'lucide-vue-next';
+import { Plus, Trash2, Paperclip, X } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface LineItem {
@@ -91,6 +91,7 @@ const form = useForm({
     is_recurring: false,
     recurring_frequency_id: '',
     next_recurring_date: '',
+    attachments: [] as File[],
 });
 
 const defaultUnitType = props.unitTypes.find(t => t.name === 'quantity')?.name || props.unitTypes[0]?.name || 'quantity';
@@ -144,6 +145,31 @@ const onContactSelect = (event: Event) => {
         form.recipient_email = contact.email;
         form.recipient_address = contact.address || '';
     }
+};
+
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+const onFilesSelected = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    if (input.files) {
+        const newFiles = Array.from(input.files);
+        const combined = [...form.attachments, ...newFiles].slice(0, 10);
+        form.attachments = combined;
+    }
+    // Reset input so the same file can be re-selected
+    if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+    }
+};
+
+const removeAttachment = (index: number) => {
+    form.attachments = form.attachments.filter((_, i) => i !== index);
+};
+
+const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 const submit = () => {
@@ -441,7 +467,7 @@ const submit = () => {
                         </div>
                     </Card>
 
-                    <!-- Sidebar: recurring + summary -->
+                    <!-- Sidebar: recurring + attachments + summary -->
                     <div class="space-y-4">
                         <!-- Recurring Options -->
                         <Card>
@@ -498,6 +524,66 @@ const submit = () => {
                                         <InputError :message="form.errors.next_recurring_date" />
                                     </div>
                                 </div>
+                            </div>
+                        </Card>
+
+                        <!-- Attachments -->
+                        <Card>
+                            <div class="p-6 space-y-4">
+                                <div>
+                                    <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Attachments
+                                    </h3>
+                                    <p class="text-xs text-muted-foreground">
+                                        Files will be included in the invoice email. Max 10 files, 10 MB each.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <input
+                                        ref="fileInputRef"
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.txt,.zip"
+                                        class="hidden"
+                                        @change="onFilesSelected"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        class="w-full"
+                                        :disabled="form.attachments.length >= 10"
+                                        @click="fileInputRef?.click()"
+                                    >
+                                        <Paperclip class="h-4 w-4 mr-1" />
+                                        Choose files
+                                    </Button>
+                                </div>
+
+                                <div v-if="form.attachments.length > 0" class="space-y-2">
+                                    <div
+                                        v-for="(file, index) in form.attachments"
+                                        :key="index"
+                                        class="flex items-center justify-between gap-2 rounded-md border bg-background/40 px-3 py-2"
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-sm">{{ file.name }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ formatFileSize(file.size) }}</p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            class="h-7 w-7 shrink-0 text-red-500 hover:text-red-600"
+                                            @click="removeAttachment(index)"
+                                        >
+                                            <X class="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <InputError :message="form.errors.attachments" />
                             </div>
                         </Card>
 
