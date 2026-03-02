@@ -80,6 +80,11 @@ class Invoice extends Model
         return $this->hasMany(Invoice::class, 'parent_invoice_id');
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(InvoiceAttachment::class);
+    }
+
     public function generateInvoiceNumber(): string
     {
         do {

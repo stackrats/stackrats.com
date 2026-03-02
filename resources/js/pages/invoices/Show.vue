@@ -15,7 +15,7 @@ import {
 import { type BreadcrumbItem } from '@/types';
 import { InvoiceStatus, type InvoiceStatusType, type RecurringFrequencyType } from '@/types/enums';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Mail, Edit, Trash2, Download, RotateCw, ChevronDown, CheckCircle2 } from 'lucide-vue-next';
+import { Mail, Edit, Trash2, Download, RotateCw, ChevronDown, CheckCircle2, Paperclip } from 'lucide-vue-next';
 import { useEcho } from '@laravel/echo-vue';
 import { ref, computed } from 'vue';
 
@@ -48,6 +48,13 @@ interface RecurringFrequencyModel {
     label:string
 }
 
+interface InvoiceAttachmentModel {
+    id: string;
+    original_name: string;
+    mime_type: string;
+    size: number;
+}
+
 interface Invoice {
     id: number;
     invoice_number: string;
@@ -67,6 +74,7 @@ interface Invoice {
     last_sent_at?: string;
     created_at: string;
     updated_at: string;
+    attachments?: InvoiceAttachmentModel[];
 }
 
 interface Props {
@@ -191,6 +199,12 @@ const updateStatus = (invoiceId: number, statusId: string) => {
 
 const calculateLineTotal = (item: LineItem) => {
     return item.quantity * item.unit_price;
+};
+
+const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 </script>
 
@@ -404,6 +418,28 @@ const calculateLineTotal = (item: LineItem) => {
                         <div class="text-right">
                             <p class="text-sm text-muted-foreground mb-2">Total amount</p>
                             <p class="text-3xl font-bold">{{ formatCurrency(invoice.amount, invoice.currency) }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Attachments -->
+                    <div v-if="invoice.attachments && invoice.attachments.length > 0" class="pt-4 border-t">
+                        <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                            Attachments
+                        </h3>
+                        <div class="space-y-2">
+                            <a
+                                v-for="attachment in invoice.attachments"
+                                :key="attachment.id"
+                                :href="`/invoices/${invoice.id}/attachments/${attachment.id}/download`"
+                                class="flex items-center gap-3 rounded-md border bg-background/40 px-4 py-3 transition-colors hover:bg-muted/50"
+                            >
+                                <Paperclip class="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium">{{ attachment.original_name }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ formatFileSize(attachment.size) }}</p>
+                                </div>
+                                <Download class="h-4 w-4 shrink-0 text-muted-foreground" />
+                            </a>
                         </div>
                     </div>
 

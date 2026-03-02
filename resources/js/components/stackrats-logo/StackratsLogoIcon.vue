@@ -1,5 +1,5 @@
-<script setup>
-import { Vue3Lottie } from "vue3-lottie";
+<script lang="ts" setup>
+import { LottieProps, Vue3Lottie } from "vue3-lottie";
 
 import { computed, ref, watch } from "vue";
 import StackratsIconDark from '../../../animations/json/stackrats-icon-dark.json';
@@ -9,7 +9,12 @@ const { dark } = defineProps({
     dark: Boolean,
 });
 
-const stackratsIconAnimation = ref(null);
+const stackratsIconAnimation = ref<{
+    play: () => void;
+    pause: () => void;
+    stop: () => void;
+    setDirection: (direction: string) => void;
+} | null>(null);
 
 const animationData = computed(() => {
     if (dark) {
@@ -25,26 +30,26 @@ const reverseCompleted = ref(false);
 const currentDirection = ref("forward");
 
 const play = () => {
-    stackratsIconAnimation.value.play();
+    stackratsIconAnimation.value?.play();
 };
 const pause = () => {
-    stackratsIconAnimation.value.pause();
+    stackratsIconAnimation.value?.pause();
 };
 const stop = () => {
-    stackratsIconAnimation.value.stop();
+    stackratsIconAnimation.value?.stop();
 };
 
 const playReverseAnimation = () => {
     pause()
     currentDirection.value = "reverse"
-    stackratsIconAnimation.value.setDirection(currentDirection.value);
+    stackratsIconAnimation.value?.setDirection(currentDirection.value);
     play();
 };
 
 const playForwardAnimation = () => {
     pause()
     currentDirection.value = "forward"
-    stackratsIconAnimation.value.setDirection(currentDirection.value);
+    stackratsIconAnimation.value?.setDirection(currentDirection.value);
     play();
 };
 
